@@ -1,97 +1,231 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Koursa Mobile
 
-# Getting Started
+Application mobile React Native pour la plateforme **Koursa** - Systeme de gestion academique et de suivi pedagogique.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Technologies utilisees
 
-## Step 1: Start Metro
+| Technologie | Version | Description |
+|-------------|---------|-------------|
+| React Native | 0.83.1 | Framework mobile cross-platform |
+| React | 19.2.0 | Librairie UI |
+| TypeScript | 5.8.3 | Typage statique |
+| React Native Paper | 5.12.5 | UI Kit Material Design 3 |
+| React Navigation | 7.x | Navigation |
+| Axios | 1.7.9 | Client HTTP |
+| AsyncStorage | 2.1.0 | Stockage local |
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Structure du projet
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+```
+KOURSA_FONTEND_MOBILE/
+├── src/
+│   ├── api/                    # Services API
+│   │   ├── config.ts           # Configuration Axios
+│   │   └── services.ts         # Services CRUD
+│   ├── contexts/               # Contextes React
+│   │   └── AuthContext.tsx     # Authentification
+│   ├── navigation/             # Navigation
+│   │   └── AppNavigator.tsx    # Configuration routes
+│   ├── screens/                # Ecrans
+│   │   ├── auth/               # Authentification
+│   │   │   ├── LoginScreen.tsx
+│   │   │   └── RegisterScreen.tsx
+│   │   ├── dashboard/          # Dashboard
+│   │   │   └── DashboardScreen.tsx
+│   │   └── fiches/             # Fiches de suivi
+│   │       ├── FichesListScreen.tsx
+│   │       └── CreateFicheScreen.tsx
+│   ├── theme/                  # Theme et couleurs
+│   │   └── index.ts
+│   └── types/                  # Types TypeScript
+│       └── index.ts
+├── App.tsx                     # Point d'entree
+├── package.json
+└── babel.config.js
+```
 
-```sh
-# Using npm
+## Fonctionnalites implementees
+
+### Authentification
+- Ecran de connexion (email/password)
+- Ecran d'inscription avec selection de role
+- Gestion de session avec AsyncStorage
+- Deconnexion
+
+### Dashboard
+- Affichage du profil utilisateur
+- Statistiques des fiches (total, validees, refusees, en attente)
+- Liste des fiches en attente
+- Actions rapides (nouvelle fiche, mes fiches, academique)
+
+### Gestion des fiches de suivi
+- Liste des fiches avec filtrage par statut
+- Recherche par UE, chapitre, contenu
+- Creation de nouvelle fiche
+- Affichage du type de seance (CM, TD, TP)
+
+### Theme
+- Support mode clair/sombre automatique
+- Couleurs personnalisees Koursa
+- Material Design 3
+
+## Installation
+
+### Prerequis
+- Node.js >= 20
+- npm ou Yarn
+- Android Studio (pour Android)
+- Xcode (pour iOS, macOS uniquement)
+
+### Etapes
+
+1. **Installer les dependances**
+```bash
+cd KOURSA_FONTEND_MOBILE
+npm install
+```
+
+2. **Pour Android**
+```bash
+# Demarrer Metro
 npm start
 
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+# Dans un autre terminal, lancer l'app
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
+3. **Pour iOS (macOS uniquement)**
+```bash
+# Installer les pods
+cd ios && pod install && cd ..
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+# Demarrer Metro
+npm start
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+# Dans un autre terminal
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## Configuration API
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+L'URL de l'API est configuree dans `src/api/config.ts` :
 
-## Step 3: Modify your app
+```typescript
+// Pour Android Emulator
+const API_BASE_URL = 'http://10.0.2.2:8000/api';
 
-Now that you have successfully run the app, let's make changes!
+// Pour iOS Simulator
+const API_BASE_URL = 'http://localhost:8000/api';
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+// Pour device physique (remplacer par votre IP)
+const API_BASE_URL = 'http://192.168.1.X:8000/api';
+```
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## Ecrans a implementer
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+- [ ] Detail d'une fiche (FicheDetailScreen)
+- [ ] Validation/Refus des fiches
+- [ ] Gestion academique (Facultes, Departements, Filieres, Niveaux)
+- [ ] Gestion des utilisateurs
+- [ ] Profil utilisateur
+- [ ] Notifications
 
-## Congratulations! :tada:
+## Navigation
 
-You've successfully run and modified your React Native App. :partying_face:
+```
+App
+├── Auth (non connecte)
+│   ├── Login
+│   └── Register
+└── Main (connecte)
+    ├── Tabs
+    │   ├── Dashboard
+    │   ├── Fiches
+    │   ├── Academique
+    │   ├── Utilisateurs
+    │   └── Profil
+    └── Modals
+        ├── CreateFiche
+        └── FicheDetail
+```
 
-### Now what?
+## API Services disponibles
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+```typescript
+// Utilisateurs
+usersService.getAll()
+usersService.getById(id)
+usersService.create(data)
+usersService.update(id, data)
+usersService.delete(id)
 
-# Troubleshooting
+// Roles
+rolesService.getAll()
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+// Facultes
+facultesService.getAll()
+facultesService.create(data)
+// ... CRUD complet
 
-# Learn More
+// Departements
+departementsService.getAll()
+// ... CRUD complet
 
-To learn more about React Native, take a look at the following resources:
+// Filieres
+filieresService.getAll()
+// ... CRUD complet
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+// Niveaux
+niveauxService.getAll()
+// ... CRUD complet
+
+// Unites d'enseignement
+unitesEnseignementService.getAll()
+// ... CRUD complet
+
+// Fiches de suivi
+fichesSuiviService.getAll()
+fichesSuiviService.getEnAttente()
+fichesSuiviService.create(data)
+fichesSuiviService.valider(id)
+fichesSuiviService.refuser(id, motif)
+// ... CRUD complet
+```
+
+## Couleurs du theme
+
+```typescript
+// Couleurs principales
+primary: '#1E88E5'      // Bleu
+secondary: '#26A69A'    // Vert-bleu
+tertiary: '#7E57C2'     // Violet
+
+// Statuts
+soumise: '#FB8C00'      // Orange
+validee: '#43A047'      // Vert
+refusee: '#E53935'      // Rouge
+
+// Types de seance
+CM: '#1E88E5'           // Bleu
+TD: '#26A69A'           // Vert
+TP: '#7E57C2'           // Violet
+```
+
+## Troubleshooting
+
+### Erreur "Unable to resolve module"
+```bash
+npm start -- --reset-cache
+```
+
+### Erreur sur Android Emulator
+Verifier que l'API backend tourne sur `http://10.0.2.2:8000`
+
+### Erreur de build iOS
+```bash
+cd ios && pod install && cd ..
+```
+
+## Licence
+
+MIT License - Copyright (c) 2025 M1 INF 4027
