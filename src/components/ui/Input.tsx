@@ -16,7 +16,7 @@ import { Colors } from '../../constants/colors';
 import { Typography } from '../../constants/typography';
 import { Spacing, BorderRadius, BorderWidth, ComponentHeights } from '../../constants/spacing';
 import { Text } from './Text';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Icon } from './Icon';
 
 interface InputProps extends TextInputProps {
   label?: string;

@@ -3,6 +3,9 @@
  * Export centralise de tous les composants UI
  */
 
+// Icon
+export { Icon } from './Icon';
+
 // Text
 export { Text, LogoText } from './Text';
 

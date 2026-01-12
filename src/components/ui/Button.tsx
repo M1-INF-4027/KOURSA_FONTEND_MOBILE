@@ -16,7 +16,7 @@ import { Colors } from '../../constants/colors';
 import { Typography } from '../../constants/typography';
 import { Spacing, BorderRadius, ComponentHeights, Shadows } from '../../constants/spacing';
 import { Text } from './Text';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Icon } from './Icon';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
 type ButtonSize = 'small' | 'medium' | 'large';

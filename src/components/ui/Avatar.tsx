@@ -14,7 +14,7 @@ import {
 import { Colors } from '../../constants/colors';
 import { AvatarSizes, BorderRadius } from '../../constants/spacing';
 import { Text } from './Text';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Icon } from './Icon';
 
 type AvatarSize = keyof typeof AvatarSizes;
 

@@ -13,7 +13,7 @@ import {
 import { Colors } from '../../constants/colors';
 import { Spacing, BorderRadius } from '../../constants/spacing';
 import { Text } from './Text';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Icon } from './Icon';
 
 type ChipVariant = 'filled' | 'outlined';
 type ChipColor = 'primary' | 'secondary' | 'accent' | 'success' | 'warning' | 'error' | 'neutral';

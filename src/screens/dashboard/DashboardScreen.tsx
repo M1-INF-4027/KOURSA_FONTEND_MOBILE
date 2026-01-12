@@ -6,7 +6,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   ScreenContainer,
   Text,
@@ -21,6 +20,7 @@ import {
   Section,
   Spacer,
   IconButton,
+  Icon,
 } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/ui/Toast';

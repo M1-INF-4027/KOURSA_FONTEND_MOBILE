@@ -6,7 +6,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   ScreenContainer,
   Text,
@@ -19,6 +18,7 @@ import {
   Section,
   Spacer,
   IconButton,
+  Icon,
 } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { ConfirmDialog } from '../../components/ui/Dialog';

@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { Spacing, BorderRadius, Shadows } from '../../constants/spacing';
+import { Icon } from './Icon';
+import { Text } from './Text';
 
 type CardVariant = 'elevated' | 'outlined' | 'filled';
 
@@ -134,24 +136,45 @@ export const CardFooter: React.FC<CardFooterProps> = ({
 };
 
 // Stat Card pour dashboard
+type StatCardColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+
 interface StatCardProps {
   title: string;
   value: string | number;
-  icon?: React.ReactNode;
-  color?: string;
+  icon?: string;
+  color?: StatCardColor;
   onPress?: () => void;
+  style?: ViewStyle;
 }
+
+const getStatCardColor = (color: StatCardColor): string => {
+  const colorMap: Record<StatCardColor, string> = {
+    primary: Colors.primary,
+    secondary: Colors.secondary,
+    success: Colors.success,
+    warning: Colors.warning,
+    danger: Colors.error,
+    info: Colors.info,
+  };
+  return colorMap[color] || Colors.primary;
+};
 
 export const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
   icon,
-  color = Colors.primary,
+  color = 'primary',
   onPress,
+  style,
 }) => {
+  const backgroundColor = getStatCardColor(color);
   const content = (
-    <View style={[styles.statCard, { backgroundColor: color }]}>
-      {icon && <View style={styles.statIcon}>{icon}</View>}
+    <View style={[styles.statCard, { backgroundColor }, style]}>
+      {icon && (
+        <View style={styles.statIcon}>
+          <Icon name={icon} size={28} color={Colors.light} />
+        </View>
+      )}
       <View style={styles.statContent}>
         <View style={styles.statValue}>
           <Text style={styles.statValueText}>{value}</Text>
@@ -171,9 +194,6 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return content;
 };
-
-// Import Text pour StatCard
-import { Text } from './Text';
 
 const styles = StyleSheet.create({
   container: {
