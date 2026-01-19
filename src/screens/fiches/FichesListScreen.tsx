@@ -103,7 +103,7 @@ const FichesListScreen: React.FC = () => {
   const renderFicheItem = ({ item }: { item: FicheSuivi }) => (
     <TouchableOpacity
       style={styles.ficheCard}
-      onPress={() => {/* TODO: Navigate to detail */}}
+      onPress={() => navigation.navigate('FicheDetail', { ficheId: item.id })}
     >
       <View style={styles.ficheHeader}>
         <View style={[styles.typeBadge, { backgroundColor: Colors.seance[item.type_seance] }]}>
