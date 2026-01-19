@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { useToast } from '../components/ui/Toast';
+import { useToast } from '../components/ui';
 
 interface UseApiState<T> {
   data: T | null;
@@ -20,7 +20,6 @@ interface UseApiReturn<T> extends UseApiState<T> {
 
 interface UseApiOptions {
   showErrorToast?: boolean;
-  errorTitle?: string;
 }
 
 /**
@@ -30,7 +29,7 @@ export function useApi<T>(
   apiFunction: (...args: any[]) => Promise<{ data: T }>,
   options: UseApiOptions = {}
 ): UseApiReturn<T> {
-  const { showErrorToast = true, errorTitle = 'Erreur' } = options;
+  const { showErrorToast = true } = options;
   const { showError } = useToast();
 
   const [state, setState] = useState<UseApiState<T>>({
@@ -57,13 +56,13 @@ export function useApi<T>(
         setState((prev) => ({ ...prev, loading: false, error: errorMessage }));
 
         if (showErrorToast) {
-          showError(errorMessage, errorTitle);
+          showError(errorMessage);
         }
 
         return null;
       }
     },
-    [apiFunction, showErrorToast, errorTitle, showError]
+    [apiFunction, showErrorToast, showError]
   );
 
   const reset = useCallback(() => {

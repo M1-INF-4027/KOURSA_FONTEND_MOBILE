@@ -9,7 +9,41 @@ import {
   UniteEnseignement,
   FicheSuivi,
   RegisterData,
+  LoginCredentials,
+  AuthTokenResponse,
+  DashboardStats,
 } from '../types';
+
+// ==================== AUTH ====================
+export const authService = {
+  login: (credentials: LoginCredentials) =>
+    api.post<AuthTokenResponse>('/auth/token/', credentials),
+
+  refreshToken: (refreshToken: string) =>
+    api.post<{ access: string }>('/auth/token/refresh/', { refresh: refreshToken }),
+
+  confirmPassword: (password: string) =>
+    api.post<{ validation_token: string }>('/users/utilisateurs/confirm-password/', { password }),
+
+  registerFcmToken: (fcmToken: string) =>
+    api.post('/users/utilisateurs/register-fcm-token/', { fcm_token: fcmToken }),
+};
+
+// ==================== DASHBOARD ====================
+export const dashboardService = {
+  getRoot: () => api.get('/dashboard/'),
+
+  getStats: () => api.get<DashboardStats>('/dashboard/stats/'),
+
+  exportHeures: (annee?: number, mois?: number) => {
+    const params = new URLSearchParams();
+    if (annee) params.append('annee', annee.toString());
+    if (mois) params.append('mois', mois.toString());
+    return api.get(`/dashboard/export-heures/?${params.toString()}`, {
+      responseType: 'blob',
+    });
+  },
+};
 
 // ==================== USERS ====================
 export const usersService = {

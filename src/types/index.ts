@@ -86,17 +86,36 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface AuthTokenResponse {
+  access: string;
+  refresh: string;
+  user: Utilisateur;
+}
+
 export interface RegisterData {
   email: string;
   password: string;
   first_name: string;
   last_name: string;
-  niveau_represente: number;
+  roles: number[];
+  niveau_represente?: number;
 }
 
 export interface AuthState {
   user: Utilisateur | null;
   token: string | null;
+  refreshToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+}
+
+// Types pour le dashboard
+export interface DashboardStats {
+  heures_validees_ce_mois: number;
+  fiches_en_retard_de_validation: number;
+  repartition_heures_par_ue_ce_mois: {
+    code_ue: string;
+    libelle_ue: string;
+    heures_effectuees: number;
+  }[];
 }

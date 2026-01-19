@@ -112,8 +112,10 @@ L'application mobile se connecte automatiquement à l'API backend hébergée sur
 
 ### URLs configurées
 
-**Production (VPS):**
-- URL: `http://84.247.183.206:8082/api`
+**Production (VPS avec HTTPS):**
+- URL: `https://koursa.duckdns.org/api`
+- Domaine: `koursa.duckdns.org` (DuckDNS)
+- Certificat SSL: Let's Encrypt (renouvellement automatique)
 - Utilisée lorsque l'app est compilée en mode production
 
 **Développement (local):**
@@ -128,13 +130,13 @@ La configuration se trouve dans `src/api/config.ts`:
 ```typescript
 const API_BASE_URL = __DEV__
   ? 'http://10.0.2.2:8000/api'           // Mode développement
-  : 'http://84.247.183.206:8082/api';    // Mode production (VPS)
+  : 'https://koursa.duckdns.org/api';    // Mode production (HTTPS)
 ```
 
 Pour tester avec l'API de production en mode développement, changez temporairement:
 
 ```typescript
-const API_BASE_URL = 'http://84.247.183.206:8082/api';
+const API_BASE_URL = 'https://koursa.duckdns.org/api';
 ```
 
 ## Ecrans a implementer

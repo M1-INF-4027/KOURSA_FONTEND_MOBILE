@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Pour device physique, utiliser l'IP de votre machine
 const API_BASE_URL = __DEV__
   ? 'http://10.0.2.2:8000/api'  // Android Emulator
-  : 'http://84.247.183.206:8082/api'; // Production VPS
+  : 'https://koursa.duckdns.org/api'; // Production VPS (HTTPS)
 
 const api = axios.create({
   baseURL: API_BASE_URL,
