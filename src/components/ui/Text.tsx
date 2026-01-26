@@ -68,4 +68,38 @@ export const Text: React.FC<TextProps> = ({
   );
 };
 
+interface LogoTextProps {
+  size?: 'small' | 'medium' | 'large';
+  style?: TextStyle | TextStyle[];
+}
+
+const logoSizes = {
+  small: { fontSize: 24, letterSpacing: 2 },
+  medium: { fontSize: 36, letterSpacing: 3 },
+  large: { fontSize: 48, letterSpacing: 4 },
+};
+
+export const LogoText: React.FC<LogoTextProps> = ({
+  size = 'medium',
+  style,
+}) => {
+  const sizeStyle = logoSizes[size];
+
+  return (
+    <RNText
+      style={[
+        {
+          fontSize: sizeStyle.fontSize,
+          fontWeight: 'bold',
+          letterSpacing: sizeStyle.letterSpacing,
+          color: Colors.primary,
+        },
+        style,
+      ]}
+    >
+      KOURSA
+    </RNText>
+  );
+};
+
 export default Text;
