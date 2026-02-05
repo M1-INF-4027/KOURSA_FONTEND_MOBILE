@@ -5,8 +5,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Pour Android Emulator, utiliser 10.0.2.2 au lieu de localhost
 // Pour iOS Simulator, utiliser localhost
 // Pour device physique, utiliser l'IP de votre machine
+const DEV_API_URL = 'http://192.168.1.198:8000/api'; // IP locale pour appareil physique
+// const DEV_API_URL = 'http://10.0.2.2:8000/api'; // Decommenter pour Android Emulator
+
 const API_BASE_URL = __DEV__
-  ? 'http://10.0.2.2:8000/api'  // Android Emulator
+  ? DEV_API_URL
   : 'https://koursa.duckdns.org/api'; // Production VPS (HTTPS)
 
 const api = axios.create({
