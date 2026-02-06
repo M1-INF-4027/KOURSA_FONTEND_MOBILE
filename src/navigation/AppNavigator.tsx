@@ -70,8 +70,15 @@ const AuthNavigator = () => {
 
 /**
  * Tabs pour les utilisateurs authentifies
+ * Les onglets affiches dependent du role de l'utilisateur
  */
 const MainTabs = () => {
+  const { user } = useAuth();
+
+  const isAdmin = user?.roles.some(
+    (r) => r.nom_role === 'Super Administrateur' || r.nom_role === 'Chef de Département'
+  );
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -114,16 +121,20 @@ const MainTabs = () => {
         component={FichesListScreen}
         options={{ title: 'Fiches' }}
       />
-      <Tab.Screen
-        name="Academic"
-        component={AcademicScreen}
-        options={{ title: 'Academique' }}
-      />
-      <Tab.Screen
-        name="Users"
-        component={UsersScreen}
-        options={{ title: 'Utilisateurs' }}
-      />
+      {isAdmin && (
+        <Tab.Screen
+          name="Academic"
+          component={AcademicScreen}
+          options={{ title: 'Académique' }}
+        />
+      )}
+      {isAdmin && (
+        <Tab.Screen
+          name="Users"
+          component={UsersScreen}
+          options={{ title: 'Utilisateurs' }}
+        />
+      )}
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}

@@ -73,7 +73,7 @@ export const seanceColors = {
 // Couleurs pour les roles
 export const roleColors = {
   'Super Administrateur': '#E53935',
-  'Chef de Departement': '#7E57C2',
+  'Chef de Département': '#7E57C2',
   'Enseignant': '#1E88E5',
-  'Delegue': '#26A69A',
+  'Délégué': '#26A69A',
 };

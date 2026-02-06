@@ -37,7 +37,7 @@ const FicheDetailScreen: React.FC = () => {
   const [motifRefus, setMotifRefus] = useState('');
 
   const isChefDepartement = user?.roles.some(
-    (r) => r.nom_role === 'Chef de Departement'
+    (r) => r.nom_role === 'Chef de Département'
   );
   const canValidate = isChefDepartement && fiche?.statut === 'SOUMISE';
 

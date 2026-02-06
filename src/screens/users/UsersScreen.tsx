@@ -33,7 +33,7 @@ const UsersScreen: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<FilterStatus>('ALL');
 
   const isChefDepartement = currentUser?.roles.some(
-    (r) => r.nom_role === 'Chef de Departement'
+    (r) => r.nom_role === 'Chef de Département'
   );
   const isSuperAdmin = currentUser?.roles.some(
     (r) => r.nom_role === 'Super Administrateur'
@@ -119,11 +119,11 @@ const UsersScreen: React.FC = () => {
     switch (roleName) {
       case 'Super Administrateur':
         return Colors.roles.superAdmin;
-      case 'Chef de Departement':
+      case 'Chef de Département':
         return Colors.roles.chefDepartement;
       case 'Enseignant':
         return Colors.roles.enseignant;
-      case 'Delegue':
+      case 'Délégué':
         return Colors.roles.delegue;
       default:
         return Colors.gray[500];

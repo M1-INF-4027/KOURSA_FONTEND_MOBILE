@@ -32,7 +32,7 @@ const FichesListScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<FilterStatus>('ALL');
 
-  const isDelegue = user?.roles.some(r => r.nom_role === 'Delegue');
+  const isDelegue = user?.roles.some(r => r.nom_role === 'Délégué');
 
   const loadFiches = useCallback(async () => {
     try {

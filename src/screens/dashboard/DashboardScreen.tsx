@@ -26,9 +26,11 @@ const DashboardScreen: React.FC = () => {
   const [fichesEnAttente, setFichesEnAttente] = useState<FicheSuivi[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isChefDepartement = user?.roles.some(r => r.nom_role === 'Chef de Departement');
-  const isDelegue = user?.roles.some(r => r.nom_role === 'Delegue');
+  const isChefDepartement = user?.roles.some(r => r.nom_role === 'Chef de Département');
+  const isSuperAdmin = user?.roles.some(r => r.nom_role === 'Super Administrateur');
+  const isDelegue = user?.roles.some(r => r.nom_role === 'Délégué');
   const isEnseignant = user?.roles.some(r => r.nom_role === 'Enseignant');
+  const isAdmin = isChefDepartement || isSuperAdmin;
 
   const loadData = useCallback(async () => {
     try {
@@ -37,8 +39,8 @@ const DashboardScreen: React.FC = () => {
       const fichesData = Array.isArray(fichesResponse.data) ? fichesResponse.data : fichesResponse.data.results ?? [];
       setFichesEnAttente(fichesData);
 
-      // Charger les stats dashboard (seulement pour chef de departement)
-      if (isChefDepartement) {
+      // Charger les stats dashboard (admin seulement)
+      if (isAdmin) {
         try {
           const statsResponse = await dashboardService.getStats();
           setStats(statsResponse.data);
@@ -51,7 +53,7 @@ const DashboardScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [isChefDepartement]);
+  }, [isAdmin]);
 
   useEffect(() => {
     loadData();
@@ -66,9 +68,9 @@ const DashboardScreen: React.FC = () => {
   const getRoleColor = (roleName: string) => {
     switch (roleName) {
       case 'Super Administrateur': return Colors.roles.superAdmin;
-      case 'Chef de Departement': return Colors.roles.chefDepartement;
+      case 'Chef de Département': return Colors.roles.chefDepartement;
       case 'Enseignant': return Colors.roles.enseignant;
-      case 'Delegue': return Colors.roles.delegue;
+      case 'Délégué': return Colors.roles.delegue;
       default: return Colors.gray[500];
     }
   };
@@ -114,8 +116,8 @@ const DashboardScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Stats Cards (Chef de Departement) */}
-      {isChefDepartement && stats && (
+      {/* Stats Cards (Admin) */}
+      {isAdmin && stats && (
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, { backgroundColor: Colors.successLight }]}>
             <Icon name="clock-check-outline" size={32} color={Colors.success} />
@@ -168,17 +170,32 @@ const DashboardScreen: React.FC = () => {
               Mes fiches
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => navigation.navigate('Academic')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: Colors.accentSurface }]}>
-              <Icon name="school-outline" size={28} color={Colors.accent} />
-            </View>
-            <Text variant="label" color="primary">
-              Academique
-            </Text>
-          </TouchableOpacity>
+          {isAdmin && (
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => navigation.navigate('Academic')}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: Colors.accentSurface }]}>
+                <Icon name="school-outline" size={28} color={Colors.accent} />
+              </View>
+              <Text variant="label" color="primary">
+                Academique
+              </Text>
+            </TouchableOpacity>
+          )}
+          {isAdmin && (
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => navigation.navigate('Users')}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: Colors.accentSurface }]}>
+                <Icon name="account-group-outline" size={28} color={Colors.accent} />
+              </View>
+              <Text variant="label" color="primary">
+                Utilisateurs
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 

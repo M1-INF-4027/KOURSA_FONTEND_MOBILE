@@ -55,7 +55,7 @@ export const SeanceLabels = {
 // Labels des roles
 export const RoleLabels = {
   'Super Administrateur': 'Super Admin',
-  'Chef de Departement': 'Chef Dept.',
+  'Chef de Département': 'Chef Dept.',
   'Enseignant': 'Enseignant',
-  'Delegue': 'Delegue',
+  'Délégué': 'Délégué',
 } as const;
