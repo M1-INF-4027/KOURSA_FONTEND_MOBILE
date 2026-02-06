@@ -56,8 +56,10 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         rolesService.getAll(),
         niveauxService.getAll(),
       ]);
-      setRoles(rolesResponse.data);
-      setNiveaux(niveauxResponse.data);
+      const rolesData = Array.isArray(rolesResponse.data) ? rolesResponse.data : rolesResponse.data.results ?? [];
+      const niveauxData = Array.isArray(niveauxResponse.data) ? niveauxResponse.data : niveauxResponse.data.results ?? [];
+      setRoles(rolesData);
+      setNiveaux(niveauxData);
     } catch (err) {
       console.error('Error loading data:', err);
     }

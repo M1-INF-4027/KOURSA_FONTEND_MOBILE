@@ -53,7 +53,8 @@ const CreateFicheScreen: React.FC = () => {
     setLoading(true);
     try {
       const response = await unitesEnseignementService.getAll();
-      setUnites(response.data);
+      const data = Array.isArray(response.data) ? response.data : response.data.results ?? [];
+      setUnites(data);
     } catch (error) {
       console.error('Error loading UEs:', error);
       Alert.alert('Erreur', 'Impossible de charger les unites d\'enseignement');

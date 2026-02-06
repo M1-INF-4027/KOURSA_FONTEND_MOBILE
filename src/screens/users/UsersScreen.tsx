@@ -43,8 +43,9 @@ const UsersScreen: React.FC = () => {
   const loadUsers = useCallback(async () => {
     try {
       const response = await usersService.getAll();
-      setUsers(response.data);
-      setFilteredUsers(response.data);
+      const data = Array.isArray(response.data) ? response.data : response.data.results ?? [];
+      setUsers(data);
+      setFilteredUsers(data);
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {

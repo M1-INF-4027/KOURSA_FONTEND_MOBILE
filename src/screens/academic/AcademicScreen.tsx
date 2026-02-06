@@ -41,9 +41,9 @@ const AcademicScreen: React.FC = () => {
         niveauxService.getAll(),
         filieresService.getAll(),
       ]);
-      setUes(uesRes.data);
-      setNiveaux(niveauxRes.data);
-      setFilieres(filieresRes.data);
+      setUes(Array.isArray(uesRes.data) ? uesRes.data : uesRes.data.results ?? []);
+      setNiveaux(Array.isArray(niveauxRes.data) ? niveauxRes.data : niveauxRes.data.results ?? []);
+      setFilieres(Array.isArray(filieresRes.data) ? filieresRes.data : filieresRes.data.results ?? []);
     } catch (error) {
       console.error('Error loading academic data:', error);
     } finally {

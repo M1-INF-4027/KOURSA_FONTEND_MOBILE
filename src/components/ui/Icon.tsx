@@ -311,6 +311,7 @@ const iconMap: Record<string, LucideIcon> = {
   'view-grid': Grid,
   'view-module': Grid,
   'view-dashboard': Layout,
+  'view-dashboard-outline': Layout,
   'layers': Layers,
   'layers-outline': Layers,
 

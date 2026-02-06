@@ -37,8 +37,9 @@ const FichesListScreen: React.FC = () => {
   const loadFiches = useCallback(async () => {
     try {
       const response = await fichesSuiviService.getAll();
-      setFiches(response.data);
-      setFilteredFiches(response.data);
+      const data = Array.isArray(response.data) ? response.data : response.data.results ?? [];
+      setFiches(data);
+      setFilteredFiches(data);
     } catch (error) {
       console.error('Error loading fiches:', error);
     } finally {

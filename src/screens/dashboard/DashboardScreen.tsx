@@ -34,7 +34,8 @@ const DashboardScreen: React.FC = () => {
     try {
       // Charger les fiches en attente
       const fichesResponse = await fichesSuiviService.getEnAttente();
-      setFichesEnAttente(fichesResponse.data);
+      const fichesData = Array.isArray(fichesResponse.data) ? fichesResponse.data : fichesResponse.data.results ?? [];
+      setFichesEnAttente(fichesData);
 
       // Charger les stats dashboard (seulement pour chef de departement)
       if (isChefDepartement) {
