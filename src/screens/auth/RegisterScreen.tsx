@@ -85,7 +85,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
     // Vérifier si le role est Délégué et qu'un niveau est sélectionné
     const selectedRoleObj = roles.find(r => r.id === selectedRole);
-    if (selectedRoleObj?.nom_role === 'Delegue' && !niveau_represente) {
+    if (selectedRoleObj?.nom_role === 'Délégué' && !niveau_represente) {
       setError('Veuillez selectionner un niveau a representer');
       return;
     }
@@ -99,8 +99,8 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         password,
         first_name: first_name.trim(),
         last_name: last_name.trim(),
-        roles: [selectedRole],
-        niveau_represente: selectedRoleObj?.nom_role === 'Delegue' ? niveau_represente : undefined,
+        roles_ids: [selectedRole],
+        niveau_represente: selectedRoleObj?.nom_role === 'Délégué' ? niveau_represente : undefined,
       };
 
       await register(registerData);
@@ -112,7 +112,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const selectedRoleObj = roles.find(r => r.id === formData.selectedRole);
-  const showNiveauPicker = selectedRoleObj?.nom_role === 'Delegue';
+  const showNiveauPicker = selectedRoleObj?.nom_role === 'Délégué';
 
   return (
     <KeyboardAvoidingView

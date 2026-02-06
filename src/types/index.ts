@@ -97,7 +97,7 @@ export interface RegisterData {
   password: string;
   first_name: string;
   last_name: string;
-  roles: number[];
+  roles_ids: number[];
   niveau_represente?: number;
 }
 
