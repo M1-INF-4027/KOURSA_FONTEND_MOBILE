@@ -23,7 +23,7 @@ KOURSA_FONTEND_MOBILE/
 │   │   ├── config.ts           # Configuration Axios
 │   │   └── services.ts         # Services CRUD
 │   ├── contexts/               # Contextes React
-│   │   └── AuthContext.tsx     # Authentification
+│   │   └── AuthContext.tsx      # Authentification
 │   ├── navigation/             # Navigation
 │   │   └── AppNavigator.tsx    # Configuration routes
 │   ├── screens/                # Ecrans
@@ -44,25 +44,25 @@ KOURSA_FONTEND_MOBILE/
 └── babel.config.js
 ```
 
-## Fonctionnalites implementees
+## Fonctionnalites
 
 ### Authentification
-- Ecran de connexion (email/password)
-- Ecran d'inscription avec selection de role
+- Connexion (email/password)
+- Inscription delegue avec selection du niveau represente
+- Compte demarre en `EN_ATTENTE`, approuve par le Chef de Departement ou Super Admin
 - Gestion de session avec AsyncStorage
-- Deconnexion
 
 ### Dashboard
-- Affichage du profil utilisateur
+- Profil utilisateur
 - Statistiques des fiches (total, validees, refusees, en attente)
 - Liste des fiches en attente
-- Actions rapides (nouvelle fiche, mes fiches, academique)
+- Actions rapides (nouvelle fiche, mes fiches)
 
 ### Gestion des fiches de suivi
 - Liste des fiches avec filtrage par statut
 - Recherche par UE, chapitre, contenu
 - Creation de nouvelle fiche
-- Affichage du type de seance (CM, TD, TP)
+- Types de seance : CM, TD, TP
 
 ### Theme
 - Support mode clair/sombre automatique
@@ -90,63 +90,31 @@ npm install
 # Demarrer Metro
 npm start
 
-# Dans un autre terminal, lancer l'app
+# Dans un autre terminal
 npm run android
 ```
 
 3. **Pour iOS (macOS uniquement)**
 ```bash
-# Installer les pods
 cd ios && pod install && cd ..
-
-# Demarrer Metro
 npm start
-
 # Dans un autre terminal
 npm run ios
 ```
 
 ## Configuration API
 
-L'application mobile se connecte automatiquement à l'API backend hébergée sur le VPS.
+La configuration se trouve dans `src/api/config.ts` :
 
-### URLs configurées
-
-**Production (VPS avec HTTPS):**
-- URL: `https://koursa.duckdns.org/api`
-- Domaine: `koursa.duckdns.org` (DuckDNS)
-- Certificat SSL: Let's Encrypt (renouvellement automatique)
-- Utilisée lorsque l'app est compilée en mode production
-
-**Développement (local):**
-- Android Emulator: `http://10.0.2.2:8000/api`
-- iOS Simulator: `http://localhost:8000/api`
-- Device physique: Remplacez par l'IP de votre machine (ex: `http://192.168.1.X:8000/api`)
-
-### Modifier la configuration
-
-La configuration se trouve dans `src/api/config.ts`:
+- **Production:** `https://koursa.duckdns.org/api`
+- **Developpement Android Emulator:** `http://10.0.2.2:8000/api`
+- **Developpement iOS Simulator:** `http://localhost:8000/api`
 
 ```typescript
 const API_BASE_URL = __DEV__
-  ? 'http://10.0.2.2:8000/api'           // Mode développement
-  : 'https://koursa.duckdns.org/api';    // Mode production (HTTPS)
+  ? 'http://10.0.2.2:8000/api'
+  : 'https://koursa.duckdns.org/api';
 ```
-
-Pour tester avec l'API de production en mode développement, changez temporairement:
-
-```typescript
-const API_BASE_URL = 'https://koursa.duckdns.org/api';
-```
-
-## Ecrans a implementer
-
-- [ ] Detail d'une fiche (FicheDetailScreen)
-- [ ] Validation/Refus des fiches
-- [ ] Gestion academique (Facultes, Departements, Filieres, Niveaux)
-- [ ] Gestion des utilisateurs
-- [ ] Profil utilisateur
-- [ ] Notifications
 
 ## Navigation
 
@@ -159,91 +127,20 @@ App
     ├── Tabs
     │   ├── Dashboard
     │   ├── Fiches
-    │   ├── Academique
-    │   ├── Utilisateurs
     │   └── Profil
     └── Modals
         ├── CreateFiche
         └── FicheDetail
 ```
 
-## API Services disponibles
+## Ecrans a implementer
 
-```typescript
-// Utilisateurs
-usersService.getAll()
-usersService.getById(id)
-usersService.create(data)
-usersService.update(id, data)
-usersService.delete(id)
-
-// Roles
-rolesService.getAll()
-
-// Facultes
-facultesService.getAll()
-facultesService.create(data)
-// ... CRUD complet
-
-// Departements
-departementsService.getAll()
-// ... CRUD complet
-
-// Filieres
-filieresService.getAll()
-// ... CRUD complet
-
-// Niveaux
-niveauxService.getAll()
-// ... CRUD complet
-
-// Unites d'enseignement
-unitesEnseignementService.getAll()
-// ... CRUD complet
-
-// Fiches de suivi
-fichesSuiviService.getAll()
-fichesSuiviService.getEnAttente()
-fichesSuiviService.create(data)
-fichesSuiviService.valider(id)
-fichesSuiviService.refuser(id, motif)
-// ... CRUD complet
-```
-
-## Couleurs du theme
-
-```typescript
-// Couleurs principales
-primary: '#1E88E5'      // Bleu
-secondary: '#26A69A'    // Vert-bleu
-tertiary: '#7E57C2'     // Violet
-
-// Statuts
-soumise: '#FB8C00'      // Orange
-validee: '#43A047'      // Vert
-refusee: '#E53935'      // Rouge
-
-// Types de seance
-CM: '#1E88E5'           // Bleu
-TD: '#26A69A'           // Vert
-TP: '#7E57C2'           // Violet
-```
-
-## Troubleshooting
-
-### Erreur "Unable to resolve module"
-```bash
-npm start -- --reset-cache
-```
-
-### Erreur sur Android Emulator
-Verifier que l'API backend tourne sur `http://10.0.2.2:8000`
-
-### Erreur de build iOS
-```bash
-cd ios && pod install && cd ..
-```
+- [ ] Detail d'une fiche (FicheDetailScreen)
+- [ ] Validation/Refus des fiches
+- [ ] Gestion academique (Facultes, Departements, Filieres, Niveaux)
+- [ ] Gestion des utilisateurs
+- [ ] Notifications push
 
 ## Licence
 
-MIT License - Copyright (c) 2025 M1 INF 4027
+Apache License 2.0 - Copyright (c) 2025 M1 INF 4027
