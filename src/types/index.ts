@@ -46,13 +46,28 @@ export interface Niveau {
 }
 
 // Types pour l'enseignement
+export interface EnseignantSimple {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  nom_complet: string;
+}
+
+export interface NiveauDetail {
+  nom_niveau: string;
+  filiere_nom: string;
+}
+
 export interface UniteEnseignement {
   id: number;
   code_ue: string;
   libelle_ue: string;
   semestre: number;
   enseignants: number[];
+  enseignants_details: EnseignantSimple[];
   niveaux: number[];
+  niveaux_details?: NiveauDetail[];
 }
 
 export type TypeSeance = 'CM' | 'TD' | 'TP';
@@ -62,6 +77,10 @@ export interface FicheSuivi {
   id: number;
   ue: number;
   nom_ue: string;
+  code_ue: string;
+  classe: string | null;
+  semestre: number | null;
+  niveaux_details: NiveauDetail[];
   delegue: number | null;
   nom_delegue: string | null;
   enseignant: number | null;

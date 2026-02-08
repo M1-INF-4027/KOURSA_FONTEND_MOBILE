@@ -20,8 +20,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Text, Icon } from '../../components/ui';
 import { Colors } from '../../constants/colors';
 import { AuthStackParamList } from '../../navigation/AppNavigator';
-import { rolesService, niveauxService } from '../../api/services';
-import { Role, Niveau } from '../../types';
+import { rolesService, niveauxService, filieresService } from '../../api/services';
+import { Role, Niveau, Filiere, RegisterData } from '../../types';
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -29,21 +29,25 @@ interface Props {
   navigation: RegisterScreenNavigationProp;
 }
 
+type RoleType = 'delegue' | 'enseignant';
+
 const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const { register } = useAuth();
+  const [selectedRole, setSelectedRole] = useState<RoleType>('delegue');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     first_name: '',
     last_name: '',
-    selectedRole: 0,
+    selectedFiliere: 0,
     niveau_represente: 0,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [filieres, setFilieres] = useState<Filiere[]>([]);
   const [niveaux, setNiveaux] = useState<Niveau[]>([]);
 
   useEffect(() => {
@@ -52,23 +56,31 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
   const loadData = async () => {
     try {
-      const [rolesResponse, niveauxResponse] = await Promise.all([
+      const [rolesResponse, filieresResponse, niveauxResponse] = await Promise.all([
         rolesService.getAll(),
+        filieresService.getAll(),
         niveauxService.getAll(),
       ]);
       const rolesData = Array.isArray(rolesResponse.data) ? rolesResponse.data : rolesResponse.data.results ?? [];
+      const filieresData = Array.isArray(filieresResponse.data) ? filieresResponse.data : filieresResponse.data.results ?? [];
       const niveauxData = Array.isArray(niveauxResponse.data) ? niveauxResponse.data : niveauxResponse.data.results ?? [];
       setRoles(rolesData);
+      setFilieres(filieresData);
       setNiveaux(niveauxData);
     } catch (err) {
       console.error('Error loading data:', err);
     }
   };
 
-  const handleRegister = async () => {
-    const { email, password, confirmPassword, first_name, last_name, selectedRole, niveau_represente } = formData;
+  // Filter niveaux by selected filière
+  const filteredNiveaux = formData.selectedFiliere
+    ? niveaux.filter((n) => n.filiere === formData.selectedFiliere)
+    : [];
 
-    if (!email.trim() || !password.trim() || !first_name.trim() || !last_name.trim() || !selectedRole) {
+  const handleRegister = async () => {
+    const { email, password, confirmPassword, first_name, last_name, niveau_represente } = formData;
+
+    if (!email.trim() || !password.trim() || !first_name.trim() || !last_name.trim()) {
       setError('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -83,10 +95,16 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
-    // Vérifier si le role est Délégué et qu'un niveau est sélectionné
-    const selectedRoleObj = roles.find(r => r.id === selectedRole);
-    if (selectedRoleObj?.nom_role === 'Délégué' && !niveau_represente) {
+    if (selectedRole === 'delegue' && !niveau_represente) {
       setError('Veuillez selectionner un niveau a representer');
+      return;
+    }
+
+    // Find the role ID
+    const roleName = selectedRole === 'delegue' ? 'Délégué' : 'Enseignant';
+    const role = roles.find(r => r.nom_role === roleName);
+    if (!role) {
+      setError(`Erreur: role ${roleName} introuvable`);
       return;
     }
 
@@ -94,13 +112,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     setError(null);
 
     try {
-      const registerData = {
+      const registerData: RegisterData = {
         email: email.trim(),
         password,
         first_name: first_name.trim(),
         last_name: last_name.trim(),
-        roles_ids: [selectedRole],
-        niveau_represente: selectedRoleObj?.nom_role === 'Délégué' ? niveau_represente : undefined,
+        roles_ids: [role.id],
+        ...(selectedRole === 'delegue' ? { niveau_represente } : {}),
       };
 
       await register(registerData);
@@ -110,9 +128,6 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       setIsLoading(false);
     }
   };
-
-  const selectedRoleObj = roles.find(r => r.id === formData.selectedRole);
-  const showNiveauPicker = selectedRoleObj?.nom_role === 'Délégué';
 
   return (
     <KeyboardAvoidingView
@@ -217,46 +232,90 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             activeOutlineColor={Colors.primary}
           />
 
-          {/* Role Picker */}
+          {/* Role Selector */}
           <View style={styles.pickerContainer}>
             <Text variant="label" color="secondary" style={styles.pickerLabel}>
-              Role
+              Je suis
             </Text>
-            <View style={styles.picker}>
-              <Picker
-                selectedValue={formData.selectedRole}
-                onValueChange={(value) => setFormData({ ...formData, selectedRole: value })}
+            <View style={styles.roleContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.roleButton,
+                  selectedRole === 'delegue' && styles.roleButtonSelected,
+                ]}
+                onPress={() => { setSelectedRole('delegue'); setFormData({ ...formData, niveau_represente: 0 }); }}
               >
-                <Picker.Item label="Selectionner un role" value={0} />
-                {roles.map((role) => (
-                  <Picker.Item key={role.id} label={role.nom_role} value={role.id} />
-                ))}
-              </Picker>
+                <Icon name="account-group" size={20} color={selectedRole === 'delegue' ? Colors.light : Colors.text.primary} />
+                <Text
+                  variant="label"
+                  color={selectedRole === 'delegue' ? 'inverse' : 'primary'}
+                  style={styles.roleButtonText}
+                >
+                  Delegue
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.roleButton,
+                  selectedRole === 'enseignant' && styles.roleButtonSelected,
+                ]}
+                onPress={() => setSelectedRole('enseignant')}
+              >
+                <Icon name="school" size={20} color={selectedRole === 'enseignant' ? Colors.light : Colors.text.primary} />
+                <Text
+                  variant="label"
+                  color={selectedRole === 'enseignant' ? 'inverse' : 'primary'}
+                  style={styles.roleButtonText}
+                >
+                  Enseignant
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
-          {/* Niveau Picker (only for Délégué) */}
-          {showNiveauPicker && (
-            <View style={styles.pickerContainer}>
-              <Text variant="label" color="secondary" style={styles.pickerLabel}>
-                Niveau a representer
-              </Text>
-              <View style={styles.picker}>
-                <Picker
-                  selectedValue={formData.niveau_represente}
-                  onValueChange={(value) => setFormData({ ...formData, niveau_represente: value })}
-                >
-                  <Picker.Item label="Selectionner un niveau" value={0} />
-                  {niveaux.map((niveau) => (
-                    <Picker.Item
-                      key={niveau.id}
-                      label={`${niveau.nom_niveau} - ${niveau.nom_filiere}`}
-                      value={niveau.id}
-                    />
-                  ))}
-                </Picker>
+          {/* Filière + Niveau Pickers (delegue only) */}
+          {selectedRole === 'delegue' && (
+            <>
+              <View style={styles.pickerContainer}>
+                <Text variant="label" color="secondary" style={styles.pickerLabel}>
+                  Filiere
+                </Text>
+                <View style={styles.picker}>
+                  <Picker
+                    selectedValue={formData.selectedFiliere}
+                    onValueChange={(value) => setFormData({ ...formData, selectedFiliere: value, niveau_represente: 0 })}
+                  >
+                    <Picker.Item label="Selectionner une filiere" value={0} />
+                    {filieres.map((filiere) => (
+                      <Picker.Item key={filiere.id} label={filiere.nom_filiere} value={filiere.id} />
+                    ))}
+                  </Picker>
+                </View>
               </View>
-            </View>
+
+              {formData.selectedFiliere > 0 && (
+                <View style={styles.pickerContainer}>
+                  <Text variant="label" color="secondary" style={styles.pickerLabel}>
+                    Niveau a representer
+                  </Text>
+                  <View style={styles.picker}>
+                    <Picker
+                      selectedValue={formData.niveau_represente}
+                      onValueChange={(value) => setFormData({ ...formData, niveau_represente: value })}
+                    >
+                      <Picker.Item label="Selectionner un niveau" value={0} />
+                      {filteredNiveaux.map((niveau) => (
+                        <Picker.Item
+                          key={niveau.id}
+                          label={niveau.nom_niveau}
+                          value={niveau.id}
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              )}
+            </>
           )}
 
           <TouchableOpacity
@@ -347,6 +406,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border.light,
     overflow: 'hidden',
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  roleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    backgroundColor: Colors.light,
+  },
+  roleButtonSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  roleButtonText: {
+    marginLeft: 8,
   },
   button: {
     backgroundColor: Colors.primary,

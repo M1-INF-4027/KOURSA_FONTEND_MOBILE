@@ -27,6 +27,9 @@ export const authService = {
 
   registerFcmToken: (fcmToken: string) =>
     api.post('/users/utilisateurs/register-fcm-token/', { fcm_token: fcmToken }),
+
+  changePassword: (oldPassword: string, newPassword: string) =>
+    api.post('/users/utilisateurs/change-password/', { old_password: oldPassword, new_password: newPassword }),
 };
 
 // ==================== DASHBOARD ====================
@@ -49,6 +52,7 @@ export const dashboardService = {
 export const usersService = {
   getAll: () => api.get<Utilisateur[]>('/users/utilisateurs/'),
   getById: (id: number) => api.get<Utilisateur>(`/users/utilisateurs/${id}/`),
+  getMe: () => api.get<Utilisateur>('/users/utilisateurs/me/'),
   create: (data: RegisterData) => api.post<Utilisateur>('/users/utilisateurs/', data),
   update: (id: number, data: Partial<Utilisateur>) =>
     api.patch<Utilisateur>(`/users/utilisateurs/${id}/`, data),
@@ -120,7 +124,10 @@ export const fichesSuiviService = {
   delete: (id: number) => api.delete(`/teaching/fiches-suivi/${id}/`),
   // Actions specifiques
   getEnAttente: () => api.get<FicheSuivi[]>('/teaching/fiches-suivi/en-attente/'),
-  valider: (id: number) => api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/valider/`),
+  valider: (id: number, validationToken: string) =>
+    api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/valider/`, { validation_token: validationToken }),
   refuser: (id: number, motif: string) =>
     api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/refuser/`, { motif_refus: motif }),
+  resoumettre: (id: number) =>
+    api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/resoumettre/`),
 };

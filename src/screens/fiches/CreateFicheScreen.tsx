@@ -15,16 +15,22 @@ import {
 import { TextInput } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Text, Icon } from '../../components/ui';
 import { Colors } from '../../constants/colors';
 import { fichesSuiviService, unitesEnseignementService } from '../../api/services';
 import { UniteEnseignement, TypeSeance } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
+import { MainStackParamList } from '../../navigation/AppNavigator';
+
+type CreateFicheRouteProp = RouteProp<MainStackParamList, 'CreateFiche'>;
 
 const CreateFicheScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const route = useRoute<CreateFicheRouteProp>();
   const { user } = useAuth();
+  const ficheId = route.params?.ficheId;
+  const isEditMode = !!ficheId;
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -49,6 +55,12 @@ const CreateFicheScreen: React.FC = () => {
     loadUnites();
   }, []);
 
+  useEffect(() => {
+    if (isEditMode) {
+      loadFiche();
+    }
+  }, [ficheId]);
+
   const loadUnites = async () => {
     setLoading(true);
     try {
@@ -60,6 +72,36 @@ const CreateFicheScreen: React.FC = () => {
       Alert.alert('Erreur', 'Impossible de charger les unites d\'enseignement');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadFiche = async () => {
+    try {
+      const response = await fichesSuiviService.getById(ficheId!);
+      const fiche = response.data;
+
+      const parseTime = (timeStr: string) => {
+        const [h, m] = timeStr.split(':').map(Number);
+        const d = new Date();
+        d.setHours(h, m, 0, 0);
+        return d;
+      };
+
+      setFormData({
+        ue: fiche.ue,
+        enseignant: fiche.enseignant || 0,
+        date_cours: new Date(fiche.date_cours),
+        heure_debut: parseTime(fiche.heure_debut),
+        heure_fin: parseTime(fiche.heure_fin),
+        salle: fiche.salle,
+        type_seance: fiche.type_seance,
+        titre_chapitre: fiche.titre_chapitre,
+        contenu_aborde: fiche.contenu_aborde,
+      });
+    } catch (error) {
+      console.error('Error loading fiche:', error);
+      Alert.alert('Erreur', 'Impossible de charger la fiche');
+      navigation.goBack();
     }
   };
 
@@ -100,12 +142,20 @@ const CreateFicheScreen: React.FC = () => {
         contenu_aborde: formData.contenu_aborde.trim(),
       };
 
-      await fichesSuiviService.create(data);
-      Alert.alert('Succes', 'Fiche de suivi creee avec succes', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      if (isEditMode) {
+        await fichesSuiviService.update(ficheId!, data);
+        await fichesSuiviService.resoumettre(ficheId!);
+        Alert.alert('Succes', 'Fiche modifiee et resoumise avec succes', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        await fichesSuiviService.create(data);
+        Alert.alert('Succes', 'Fiche de suivi creee avec succes', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      }
     } catch (error: any) {
-      console.error('Error creating fiche:', error);
+      console.error('Error creating/updating fiche:', error);
       const errorMessage = error.response?.data?.detail ||
         error.response?.data?.message ||
         'Impossible de creer la fiche de suivi';
@@ -149,7 +199,7 @@ const CreateFicheScreen: React.FC = () => {
           <Icon name="close" size={24} color={Colors.text.primary} />
         </TouchableOpacity>
         <Text variant="h5" color="primary" style={styles.headerTitle}>
-          Nouvelle fiche
+          {isEditMode ? 'Modifier la fiche' : 'Nouvelle fiche'}
         </Text>
         <View style={{ width: 24 }} />
       </View>
@@ -166,13 +216,17 @@ const CreateFicheScreen: React.FC = () => {
               onValueChange={(value) => setFormData({ ...formData, ue: value, enseignant: 0 })}
             >
               <Picker.Item label="Selectionner une UE" value={0} />
-              {unites.map((ue) => (
-                <Picker.Item
-                  key={ue.id}
-                  label={`${ue.code_ue} - ${ue.libelle_ue}`}
-                  value={ue.id}
-                />
-              ))}
+              {unites.map((ue) => {
+                const nivs = ue.niveaux_details || [];
+                const classeLabel = nivs.map(n => `${n.filiere_nom || ''} ${n.nom_niveau}`.trim()).join(', ');
+                return (
+                  <Picker.Item
+                    key={ue.id}
+                    label={`${ue.code_ue} - ${ue.libelle_ue}${classeLabel ? ` (${classeLabel})` : ''}`}
+                    value={ue.id}
+                  />
+                );
+              })}
             </Picker>
           </View>
         </View>
@@ -189,7 +243,13 @@ const CreateFicheScreen: React.FC = () => {
                 onValueChange={(value) => setFormData({ ...formData, enseignant: value })}
               >
                 <Picker.Item label="Selectionner un enseignant" value={0} />
-                {selectedUE.enseignants.map((ensId) => (
+                {selectedUE.enseignants_details?.map((ens) => (
+                  <Picker.Item
+                    key={ens.id}
+                    label={ens.nom_complet}
+                    value={ens.id}
+                  />
+                )) ?? selectedUE.enseignants.map((ensId) => (
                   <Picker.Item
                     key={ensId}
                     label={`Enseignant #${ensId}`}
@@ -360,7 +420,7 @@ const CreateFicheScreen: React.FC = () => {
             <>
               <Icon name="check" size={20} color={Colors.light} />
               <Text variant="button" color="inverse" style={styles.submitText}>
-                Soumettre la fiche
+                {isEditMode ? 'Modifier et resoumettre' : 'Soumettre la fiche'}
               </Text>
             </>
           )}

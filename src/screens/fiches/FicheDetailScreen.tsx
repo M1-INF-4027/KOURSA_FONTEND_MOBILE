@@ -17,10 +17,11 @@ import { TextInput } from 'react-native-paper';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { Text, Icon } from '../../components/ui';
 import { Colors } from '../../constants/colors';
-import { fichesSuiviService } from '../../api/services';
+import { fichesSuiviService, authService } from '../../api/services';
 import { FicheSuivi, StatutFiche } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { MainStackParamList } from '../../navigation/AppNavigator';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type FicheDetailRouteProp = RouteProp<MainStackParamList, 'FicheDetail'>;
 
@@ -35,11 +36,13 @@ const FicheDetailScreen: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [showRefuseModal, setShowRefuseModal] = useState(false);
   const [motifRefus, setMotifRefus] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
 
-  const isChefDepartement = user?.roles.some(
-    (r) => r.nom_role === 'Chef de Département'
-  );
-  const canValidate = isChefDepartement && fiche?.statut === 'SOUMISE';
+  const isEnseignantConcerne = user?.roles.some(r => r.nom_role === 'Enseignant')
+    && fiche?.enseignant === user?.id;
+  const canValidate = isEnseignantConcerne && fiche?.statut === 'SOUMISE';
+  const canResubmit = fiche?.delegue === user?.id && fiche?.statut === 'REFUSEE';
 
   const loadFiche = useCallback(async () => {
     try {
@@ -84,33 +87,38 @@ const FicheDetailScreen: React.FC = () => {
     }
   };
 
-  const handleValidate = async () => {
-    Alert.alert(
-      'Valider la fiche',
-      'Voulez-vous vraiment valider cette fiche de suivi ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Valider',
-          onPress: async () => {
-            setActionLoading(true);
-            try {
-              await fichesSuiviService.valider(ficheId);
-              Alert.alert('Succes', 'Fiche validee avec succes');
-              loadFiche();
-            } catch (error: any) {
-              const message =
-                error.response?.data?.detail ||
-                error.response?.data?.message ||
-                'Erreur lors de la validation';
-              Alert.alert('Erreur', message);
-            } finally {
-              setActionLoading(false);
-            }
-          },
-        },
-      ]
-    );
+  const handleValidate = () => {
+    setShowPasswordModal(true);
+  };
+
+  const handleConfirmValidation = async () => {
+    if (!password.trim()) {
+      Alert.alert('Erreur', 'Veuillez entrer votre mot de passe');
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const tokenResponse = await authService.confirmPassword(password);
+      const validationToken = tokenResponse.data.validation_token;
+      await fichesSuiviService.valider(ficheId, validationToken);
+      setShowPasswordModal(false);
+      setPassword('');
+      Alert.alert('Succes', 'Fiche validee avec succes');
+      loadFiche();
+    } catch (error: any) {
+      const message =
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        'Erreur lors de la validation';
+      Alert.alert('Erreur', message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResubmit = () => {
+    navigation.navigate('CreateFiche', { ficheId });
   };
 
   const handleRefuse = async () => {
@@ -264,6 +272,18 @@ const FicheDetailScreen: React.FC = () => {
           </View>
 
           <View style={styles.detailItem}>
+            <Icon name="school" size={20} color={Colors.gray[500]} />
+            <View style={styles.detailContent}>
+              <Text variant="bodySmall" color="tertiary">
+                Classe
+              </Text>
+              <Text variant="body" color="primary">
+                {fiche.classe || '-'}{fiche.semestre ? ` (S${fiche.semestre})` : ''}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.detailItem}>
             <Icon name="account" size={20} color={Colors.gray[500]} />
             <View style={styles.detailContent}>
               <Text variant="bodySmall" color="tertiary">
@@ -342,6 +362,19 @@ const FicheDetailScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Resubmit Button */}
+        {canResubmit && (
+          <TouchableOpacity
+            style={styles.resubmitButton}
+            onPress={handleResubmit}
+          >
+            <Icon name="pencil" size={20} color={Colors.light} />
+            <Text variant="button" color="inverse" style={styles.actionText}>
+              Modifier et resoumettre
+            </Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {/* Refuse Modal */}
@@ -396,6 +429,65 @@ const FicheDetailScreen: React.FC = () => {
                 ) : (
                   <Text variant="button" color="inverse">
                     Refuser
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Password Confirmation Modal */}
+      <Modal
+        visible={showPasswordModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text variant="h5" color="primary" style={styles.modalTitle}>
+              Confirmer la validation
+            </Text>
+            <Text variant="body" color="secondary" style={styles.modalSubtitle}>
+              Entrez votre mot de passe pour valider cette fiche
+            </Text>
+
+            <TextInput
+              label="Mot de passe"
+              value={password}
+              onChangeText={setPassword}
+              mode="outlined"
+              secureTextEntry
+              style={styles.motifInput}
+              outlineColor={Colors.border.light}
+              activeOutlineColor={Colors.primary}
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowPasswordModal(false);
+                  setPassword('');
+                }}
+                disabled={actionLoading}
+              >
+                <Text variant="button" color="secondary">
+                  Annuler
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: Colors.success }]}
+                onPress={handleConfirmValidation}
+                disabled={actionLoading}
+              >
+                {actionLoading ? (
+                  <ActivityIndicator color={Colors.light} size="small" />
+                ) : (
+                  <Text variant="button" color="inverse">
+                    Valider
                   </Text>
                 )}
               </TouchableOpacity>
@@ -570,6 +662,15 @@ const styles = StyleSheet.create({
   },
   confirmRefuseButton: {
     backgroundColor: Colors.error,
+  },
+  resubmitButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 8,
   },
 });
 

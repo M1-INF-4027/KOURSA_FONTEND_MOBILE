@@ -70,7 +70,8 @@ const FichesListScreen: React.FC = () => {
         f.nom_ue?.toLowerCase().includes(query) ||
         f.titre_chapitre?.toLowerCase().includes(query) ||
         f.contenu_aborde?.toLowerCase().includes(query) ||
-        f.nom_enseignant?.toLowerCase().includes(query)
+        f.nom_enseignant?.toLowerCase().includes(query) ||
+        f.classe?.toLowerCase().includes(query)
       );
     }
 
@@ -126,6 +127,15 @@ const FichesListScreen: React.FC = () => {
       <Text variant="body" color="secondary" numberOfLines={2}>
         {item.titre_chapitre}
       </Text>
+
+      {item.classe && (
+        <View style={styles.classeRow}>
+          <Icon name="school" size={14} color={Colors.gray[500]} />
+          <Text variant="bodySmall" color="tertiary" style={styles.detailText}>
+            {item.classe}{item.semestre ? ` (S${item.semestre})` : ''}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.ficheDetails}>
         <View style={styles.detailRow}>
@@ -346,6 +356,16 @@ const styles = StyleSheet.create({
   },
   ficheTitre: {
     marginBottom: 4,
+  },
+  classeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    backgroundColor: Colors.gray[50],
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
   },
   ficheDetails: {
     flexDirection: 'row',

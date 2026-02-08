@@ -11,17 +11,25 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { Text, Icon } from '../../components/ui';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
-import { usersService } from '../../api/services';
+import { usersService, authService } from '../../api/services';
 
 const ProfileScreen: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   const [formData, setFormData] = useState({
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
@@ -104,6 +112,39 @@ const ProfileScreen: React.FC = () => {
       last_name: user?.last_name || '',
     });
     setIsEditing(false);
+  };
+
+  const handleChangePassword = async () => {
+    const { oldPassword, newPassword, confirmPassword } = passwordData;
+
+    if (!oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      return;
+    }
+    if (newPassword.length < 8) {
+      Alert.alert('Erreur', 'Le nouveau mot de passe doit contenir au moins 8 caracteres');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Erreur', 'Les nouveaux mots de passe ne correspondent pas');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await authService.changePassword(oldPassword, newPassword);
+      setShowPasswordModal(false);
+      setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      Alert.alert('Succes', 'Mot de passe modifie avec succes');
+    } catch (error: any) {
+      const message =
+        error.response?.data?.detail ||
+        error.response?.data?.new_password?.[0] ||
+        'Erreur lors du changement de mot de passe';
+      Alert.alert('Erreur', message);
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   const handleLogout = () => {
@@ -291,7 +332,7 @@ const ProfileScreen: React.FC = () => {
           Actions
         </Text>
 
-        <TouchableOpacity style={styles.actionItem}>
+        <TouchableOpacity style={styles.actionItem} onPress={() => setShowPasswordModal(true)}>
           <View style={[styles.actionIcon, { backgroundColor: Colors.primarySurface }]}>
             <Icon name="lock-reset" size={20} color={Colors.primary} />
           </View>
@@ -346,6 +387,81 @@ const ProfileScreen: React.FC = () => {
           Systeme de gestion academique
         </Text>
       </View>
+
+      {/* Change Password Modal */}
+      <Modal
+        visible={showPasswordModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text variant="h5" color="primary" style={styles.modalTitle}>
+              Changer le mot de passe
+            </Text>
+
+            <TextInput
+              label="Mot de passe actuel"
+              value={passwordData.oldPassword}
+              onChangeText={(text) => setPasswordData({ ...passwordData, oldPassword: text })}
+              mode="outlined"
+              secureTextEntry
+              style={styles.modalInput}
+              outlineColor={Colors.border.light}
+              activeOutlineColor={Colors.primary}
+            />
+            <TextInput
+              label="Nouveau mot de passe"
+              value={passwordData.newPassword}
+              onChangeText={(text) => setPasswordData({ ...passwordData, newPassword: text })}
+              mode="outlined"
+              secureTextEntry
+              style={styles.modalInput}
+              outlineColor={Colors.border.light}
+              activeOutlineColor={Colors.primary}
+            />
+            <TextInput
+              label="Confirmer le nouveau mot de passe"
+              value={passwordData.confirmPassword}
+              onChangeText={(text) => setPasswordData({ ...passwordData, confirmPassword: text })}
+              mode="outlined"
+              secureTextEntry
+              style={styles.modalInput}
+              outlineColor={Colors.border.light}
+              activeOutlineColor={Colors.primary}
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => {
+                  setShowPasswordModal(false);
+                  setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+                }}
+                disabled={passwordLoading}
+              >
+                <Text variant="button" color="secondary">
+                  Annuler
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: Colors.primary }]}
+                onPress={handleChangePassword}
+                disabled={passwordLoading}
+              >
+                {passwordLoading ? (
+                  <ActivityIndicator color={Colors.light} size="small" />
+                ) : (
+                  <Text variant="button" color="inverse">
+                    Confirmer
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -482,6 +598,41 @@ const styles = StyleSheet.create({
   appInfo: {
     alignItems: 'center',
     padding: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: Colors.light,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    marginBottom: 16,
+  },
+  modalInput: {
+    backgroundColor: Colors.light,
+    marginBottom: 12,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalCancelButton: {
+    backgroundColor: Colors.gray[100],
   },
 });
 
