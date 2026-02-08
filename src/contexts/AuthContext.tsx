@@ -7,6 +7,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Utilisateur, AuthState, LoginCredentials, RegisterData } from '../types';
 import { authService, usersService } from '../api/services';
+import { registerDeviceToken } from '../services/NotificationService';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
@@ -14,6 +15,7 @@ interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   updateUser: (user: Utilisateur) => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,6 +62,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           isLoading: false,
           isAuthenticated: true,
         });
+
+        // Re-enregistrer le token FCM au redemarrage
+        registerDeviceToken().catch((err) =>
+          console.warn('FCM token registration on restore failed:', err)
+        );
       } else {
         setState((prev) => ({ ...prev, isLoading: false }));
       }
@@ -89,6 +96,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isLoading: false,
         isAuthenticated: true,
       });
+
+      // Enregistrer le token FCM pour les notifications push
+      registerDeviceToken().catch((err) =>
+        console.warn('FCM token registration failed:', err)
+      );
     } catch (error: any) {
       console.error('Login error:', error);
 
@@ -163,6 +175,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await usersService.getMe();
+      const updatedUser = response.data;
+      setState((prev) => ({ ...prev, user: updatedUser }));
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+    }
+  };
+
   const refreshAccessToken = async (): Promise<boolean> => {
     try {
       const { refreshToken } = state;
@@ -195,6 +218,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         logout,
         updateUser,
         refreshAccessToken,
+        refreshUser,
       }}>
       {children}
     </AuthContext.Provider>

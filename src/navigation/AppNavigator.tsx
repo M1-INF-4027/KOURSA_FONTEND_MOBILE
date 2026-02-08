@@ -3,8 +3,8 @@
  * Navigation principale de l'application
  */
 
-import React from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -43,7 +43,7 @@ export type MainTabParamList = {
 
 export type MainStackParamList = {
   MainTabs: undefined;
-  CreateFiche: undefined;
+  CreateFiche: { ficheId?: number } | undefined;
   FicheDetail: { ficheId: number };
 };
 
@@ -178,6 +178,65 @@ const MainNavigator = () => {
 };
 
 /**
+ * Ecran d'attente d'approbation pour les comptes EN_ATTENTE
+ */
+const PendingApprovalScreen = () => {
+  const { logout, refreshUser } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshUser();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  return (
+    <View style={styles.pendingContainer}>
+      <View style={styles.pendingCard}>
+        <View style={styles.pendingIconContainer}>
+          <Icon name="clock-outline" size={64} color={Colors.accent} />
+        </View>
+        <Text variant="h4" color="primary" style={styles.pendingTitle}>
+          Compte en attente
+        </Text>
+        <Text variant="body" color="secondary" style={styles.pendingMessage}>
+          Votre compte est en cours de validation par le chef de departement.
+          Vous serez notifie une fois votre compte approuve.
+        </Text>
+        <TouchableOpacity
+          style={styles.pendingRefreshButton}
+          onPress={handleRefresh}
+          disabled={refreshing}
+        >
+          {refreshing ? (
+            <ActivityIndicator color={Colors.light} size="small" />
+          ) : (
+            <>
+              <Icon name="refresh" size={20} color={Colors.light} />
+              <Text variant="button" color="inverse" style={styles.pendingButtonText}>
+                Rafraichir le statut
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.pendingLogoutButton}
+          onPress={logout}
+        >
+          <Icon name="logout" size={20} color={Colors.error} />
+          <Text variant="button" color="error" style={styles.pendingButtonText}>
+            Se deconnecter
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+/**
  * Ecran de chargement
  */
 const LoadingScreen = () => {
@@ -195,15 +254,23 @@ const LoadingScreen = () => {
  * Navigateur racine
  */
 const AppNavigator = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
+  const isPending = isAuthenticated && user?.statut === 'EN_ATTENTE';
+
   return (
     <NavigationContainer>
-      {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
+      {!isAuthenticated ? (
+        <AuthNavigator />
+      ) : isPending ? (
+        <PendingApprovalScreen />
+      ) : (
+        <MainNavigator />
+      )}
     </NavigationContainer>
   );
 };
@@ -245,6 +312,63 @@ const styles = StyleSheet.create({
   },
   loadingIndicator: {
     marginTop: 16,
+  },
+  // Pending Approval
+  pendingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.background.secondary,
+    padding: 24,
+  },
+  pendingCard: {
+    backgroundColor: Colors.light,
+    borderRadius: 16,
+    padding: 32,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  pendingIconContainer: {
+    marginBottom: 24,
+  },
+  pendingTitle: {
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  pendingMessage: {
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
+  },
+  pendingRefreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    width: '100%',
+    marginBottom: 12,
+  },
+  pendingLogoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.errorLight,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    width: '100%',
+  },
+  pendingButtonText: {
+    marginLeft: 8,
   },
 });
 

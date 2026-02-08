@@ -5,19 +5,19 @@
 
 export const Colors = {
   // Couleurs principales de la marque
-  primary: '#0019A6',      // Bleu foncé - Couleur principale
-  secondary: '#4596F4',    // Bleu clair - Couleur secondaire
+  primary: '#001EA6',      // Bleu foncé - Couleur principale
+  secondary: '#3B82F6',    // Bleu clair - Couleur secondaire
   accent: '#F7B016',       // Jaune/Orange - Couleur d'accent
   dark: '#131313',         // Noir - Texte et fonds sombres
   light: '#FFFFFF',        // Blanc - Fonds clairs
 
   // Variantes du primary
-  primaryLight: '#1A3BC7',
+  primaryLight: '#1E3FD8',
   primaryDark: '#000D6B',
-  primarySurface: '#E8EAFF',
+  primarySurface: '#EEF0FF',
 
   // Variantes du secondary
-  secondaryLight: '#6DB5FF',
+  secondaryLight: '#60A5FA',
   secondaryDark: '#2A70C2',
   secondarySurface: '#E3F2FF',
 
@@ -39,7 +39,7 @@ export const Colors = {
   warningLight: '#FEF3C7',
   warningDark: '#D97706',
 
-  info: '#4596F4',
+  info: '#3B82F6',
   infoLight: '#DBEAFE',
   infoDark: '#2563EB',
 
@@ -47,9 +47,9 @@ export const Colors = {
   gray: {
     50: '#FAFAFA',
     100: '#F5F5F5',
-    200: '#E5E5E5',
+    200: '#DFDFDF',
     300: '#D4D4D4',
-    400: '#A3A3A3',
+    400: '#7E7E7E',
     500: '#737373',
     600: '#525252',
     700: '#404040',
@@ -60,8 +60,8 @@ export const Colors = {
   // Couleurs de fond
   background: {
     primary: '#FFFFFF',
-    secondary: '#F5F7FA',
-    tertiary: '#E8EAFF',
+    secondary: '#F8F9FC',
+    tertiary: '#EEF0FF',
     dark: '#131313',
     darkSecondary: '#1E1E1E',
   },
@@ -72,16 +72,16 @@ export const Colors = {
     secondary: '#525252',
     tertiary: '#737373',
     inverse: '#FFFFFF',
-    link: '#4596F4',
+    link: '#3B82F6',
     accent: '#F7B016',
   },
 
   // Couleurs de bordure
   border: {
-    light: '#E5E5E5',
+    light: '#DFDFDF',
     medium: '#D4D4D4',
     dark: '#A3A3A3',
-    focus: '#4596F4',
+    focus: '#3B82F6',
   },
 
   // Overlay
@@ -101,8 +101,8 @@ export const Colors = {
 
   // Types de seances
   seance: {
-    CM: '#0019A6',
-    TD: '#4596F4',
+    CM: '#001EA6',
+    TD: '#3B82F6',
     TP: '#F7B016',
   },
 
@@ -110,7 +110,7 @@ export const Colors = {
   roles: {
     superAdmin: '#EF4444',
     chefDepartement: '#7C3AED',
-    enseignant: '#0019A6',
+    enseignant: '#001EA6',
     delegue: '#10B981',
   },
 
@@ -133,14 +133,14 @@ export const DarkColors = {
     secondary: '#A3A3A3',
     tertiary: '#737373',
     inverse: '#131313',
-    link: '#6DB5FF',
+    link: '#60A5FA',
     accent: '#FFD54F',
   },
   border: {
     light: '#404040',
     medium: '#525252',
     dark: '#737373',
-    focus: '#6DB5FF',
+    focus: '#60A5FA',
   },
   primarySurface: '#1A1A3D',
   secondarySurface: '#1A2A3D',

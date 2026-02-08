@@ -8,7 +8,7 @@ Toutes les modifications notables de l'application mobile Koursa.
 
 #### Configuration API
 - **`src/api/config.ts`**
-  - Mise à jour de l'URL de production: `http://84.247.183.206:8082/api`
+  - Mise à jour de l'URL de production: `https://koursa.duckdns.org/api`
   - Ancien: `https://votre-api-production.com/api` (placeholder)
   - Nouveau: Backend VPS hébergé et fonctionnel
 
@@ -46,11 +46,11 @@ Toutes les modifications notables de l'application mobile Koursa.
 
 **Production (VPS):**
 ```
-Base: http://84.247.183.206:8082
-API: http://84.247.183.206:8082/api
-Admin: http://84.247.183.206:8082/admin/
-Swagger: http://84.247.183.206:8082/swagger/
-ReDoc: http://84.247.183.206:8082/redoc/
+Base: https://koursa.duckdns.org
+API: https://koursa.duckdns.org/api
+Admin: https://koursa.duckdns.org/admin/
+Swagger: https://koursa.duckdns.org/swagger/
+ReDoc: https://koursa.duckdns.org/redoc/
 ```
 
 **Développement (Local):**
@@ -63,7 +63,7 @@ Device physique: http://[IP_LOCALE]:8000/api
 #### Configuration backend
 
 Le backend Django REST Framework est maintenant hébergé sur:
-- Serveur: VPS 84.247.183.206
+- Serveur: VPS koursa.duckdns.org
 - Port: 8082 (externe), 8002 (interne)
 - Base de données: PostgreSQL
 - Service: systemd + Gunicorn + Nginx

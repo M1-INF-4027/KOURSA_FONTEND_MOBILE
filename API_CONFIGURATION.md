@@ -7,7 +7,7 @@ L'application mobile Koursa a été configurée pour se connecter au backend hé
 ## URLs configurées
 
 ### Production (VPS)
-- **URL complète:** `http://84.247.183.206:8082/api`
+- **URL complète:** `https://koursa.duckdns.org/api`
 - **Backend:** Django REST Framework
 - **Utilisation:** Mode production de l'application
 - **Compilation:** Release builds (APK/IPA)
@@ -27,7 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = __DEV__
   ? 'http://10.0.2.2:8000/api'           // Android Emulator (dev)
-  : 'http://84.247.183.206:8082/api';    // Production VPS
+  : 'https://koursa.duckdns.org/api';    // Production VPS
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -81,14 +81,14 @@ const API_BASE_URL = 'http://192.168.1.X:8000/api';
 Pour tester l'app en développement avec l'API de production:
 
 ```typescript
-const API_BASE_URL = 'http://84.247.183.206:8082/api';
+const API_BASE_URL = 'https://koursa.duckdns.org/api';
 ```
 
 ### 3. Build de production
 
 En mode production (`__DEV__ = false`), l'app utilise automatiquement:
 ```
-http://84.247.183.206:8082/api
+https://koursa.duckdns.org/api
 ```
 
 ## Endpoints disponibles
@@ -119,9 +119,9 @@ L'API backend expose les endpoints suivants:
 - `POST /teaching/fiches-suivi/{id}/refuser/` - Refuser une fiche
 
 ### Documentation
-- Swagger UI: `http://84.247.183.206:8082/swagger/`
-- ReDoc: `http://84.247.183.206:8082/redoc/`
-- Admin Django: `http://84.247.183.206:8082/admin/`
+- Swagger UI: `https://koursa.duckdns.org/swagger/`
+- ReDoc: `https://koursa.duckdns.org/redoc/`
+- Admin Django: `https://koursa.duckdns.org/admin/`
 
 ## Tester la connexion
 
@@ -129,10 +129,10 @@ L'API backend expose les endpoints suivants:
 
 ```bash
 # Test de l'API
-curl http://84.247.183.206:8082/api/
+curl https://koursa.duckdns.org/api/
 
 # Test de connexion (remplacez par vos identifiants)
-curl -X POST http://84.247.183.206:8082/api/auth/token/ \
+curl -X POST https://koursa.duckdns.org/api/auth/token/ \
   -H "Content-Type: application/json" \
   -d '{"email": "user@example.com", "password": "password"}'
 ```
@@ -200,7 +200,7 @@ L'application affiche un message d'erreur si:
 
 **1. Vérifiez que le backend est en ligne:**
 ```bash
-curl http://84.247.183.206:8082/api/
+curl https://koursa.duckdns.org/api/
 ```
 
 **2. Vérifiez la configuration dans `config.ts`:**
@@ -219,7 +219,7 @@ Dans `settings.py` du backend:
 ```python
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://84.247.183.206:8082",
+    "https://koursa.duckdns.org",
 ]
 
 # En développement
@@ -262,7 +262,7 @@ if DEBUG:
 
 1. **Migrer vers HTTPS:**
    ```typescript
-   const API_BASE_URL = 'https://84.247.183.206:8082/api';
+   const API_BASE_URL = 'https://koursa.duckdns.org:8082/api';
    ```
 
 2. **Utiliser react-native-keychain** pour un stockage ultra-sécurisé:
@@ -278,7 +278,7 @@ if DEBUG:
 
 ### 13 janvier 2026
 - ✅ Configuration initiale de l'API de production
-- ✅ URL du VPS: `http://84.247.183.206:8082/api`
+- ✅ URL du VPS: `https://koursa.duckdns.org/api`
 - ✅ Mise à jour de `src/api/config.ts`
 - ✅ Mise à jour du README.md
 - ✅ Création de `.env.example`

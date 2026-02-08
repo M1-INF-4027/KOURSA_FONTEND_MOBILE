@@ -19,7 +19,7 @@ const API_BASE_URL = __DEV__
 ```typescript
 const API_BASE_URL = __DEV__
   ? 'http://10.0.2.2:8000/api'
-  : 'http://84.247.183.206:8082/api';  // Production VPS ✅
+  : 'https://koursa.duckdns.org/api';  // Production VPS ✅
 ```
 
 ### 2. Documentation créée
@@ -33,10 +33,10 @@ const API_BASE_URL = __DEV__
 
 ### Backend de Production (VPS)
 ```
-Base URL: http://84.247.183.206:8082
-API: http://84.247.183.206:8082/api
-Admin: http://84.247.183.206:8082/admin/
-Swagger: http://84.247.183.206:8082/swagger/
+Base URL: https://koursa.duckdns.org
+API: https://koursa.duckdns.org/api
+Admin: https://koursa.duckdns.org/admin/
+Swagger: https://koursa.duckdns.org/swagger/
 ```
 
 ### Backend de Développement (Local)
@@ -68,7 +68,7 @@ npm run android  # ou npm run ios
 Pour tester avec l'API de production en mode dev, modifiez temporairement `config.ts`:
 
 ```typescript
-const API_BASE_URL = 'http://84.247.183.206:8082/api';
+const API_BASE_URL = 'https://koursa.duckdns.org/api';
 ```
 
 Puis lancez l'app et essayez de:
@@ -104,10 +104,10 @@ open ios/KoursaMobile.xcworkspace
 
 ```bash
 # Test simple
-curl http://84.247.183.206:8082/api/
+curl https://koursa.duckdns.org/api/
 
 # Test de login
-curl -X POST http://84.247.183.206:8082/api/auth/token/ \
+curl -X POST https://koursa.duckdns.org/api/auth/token/ \
   -H "Content-Type: application/json" \
   -d '{"email": "test@example.com", "password": "password123"}'
 ```
@@ -129,7 +129,7 @@ console.log('🔧 Mode:', __DEV__ ? 'Développement' : 'Production');
 - Hot reload activé
 
 ### Mode Production (`__DEV__ = false`)
-- L'app se connecte au VPS sur `http://84.247.183.206:8082/api`
+- L'app se connecte au VPS sur `https://koursa.duckdns.org/api`
 - Utilisé dans les builds release (APK/IPA)
 - Optimisations activées
 
@@ -141,7 +141,7 @@ Le backend doit autoriser les requêtes cross-origin. Vérifiez `settings.py`:
 ```python
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://84.247.183.206:8082",
+    "https://koursa.duckdns.org",
 ]
 
 if DEBUG:
@@ -153,7 +153,7 @@ Le backend doit avoir `CSRF_TRUSTED_ORIGINS` configuré:
 
 ```python
 CSRF_TRUSTED_ORIGINS = [
-    'http://84.247.183.206:8082',
+    'https://koursa.duckdns.org',
 ]
 ```
 
@@ -175,7 +175,7 @@ Actuellement, l'API utilise HTTP. Pour la production, il est recommandé de:
 
 1. **Vérifiez que le backend est en ligne:**
    ```bash
-   curl http://84.247.183.206:8082/api/
+   curl https://koursa.duckdns.org/api/
    ```
 
 2. **Vérifiez l'URL dans config.ts:**
@@ -219,7 +219,7 @@ Actuellement, l'API utilise HTTP. Pour la production, il est recommandé de:
 - ❌ Ancien backend Render (si configuré)
 
 ### Après
-- ✅ URL de production configurée: `http://84.247.183.206:8082/api`
+- ✅ URL de production configurée: `https://koursa.duckdns.org/api`
 - ✅ Backend VPS hébergé et fonctionnel
 - ✅ Documentation complète
 - ✅ Mode dev et prod correctement configurés
@@ -236,6 +236,6 @@ Pour plus de détails, consultez:
 **L'application mobile est maintenant prête à communiquer avec le backend hébergé sur le VPS!** 🎉
 
 Pour tout problème, vérifiez:
-1. Que le backend est accessible: `http://84.247.183.206:8082`
+1. Que le backend est accessible: `https://koursa.duckdns.org`
 2. Les logs de l'application
 3. La configuration dans `src/api/config.ts`
