@@ -82,25 +82,31 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
     return `${first}${last}`.toUpperCase();
   };
 
-  const getUserRole = () => {
-    if (!user?.roles?.length) return 'Utilisateur';
-    return user.roles[0].nom_role;
+  const getUserRoles = () => {
+    if (!user?.roles?.length) return ['Utilisateur'];
+    return user.roles.map((r: any) => r.nom_role);
   };
 
-  const getRoleColor = () => {
-    const role = getUserRole();
+  const getRoleColorByName = (role: string) => {
     switch (role) {
       case 'Super Administrateur':
         return Colors.status.error;
-      case 'Administrateur':
+      case 'Chef de Département':
+      case 'Chef de Departement':
         return Colors.accent;
       case 'Enseignant':
         return Colors.primary;
+      case 'Délégué':
       case 'Delegue':
         return Colors.secondary;
       default:
         return Colors.gray[500];
     }
+  };
+
+  const getRoleColor = () => {
+    const roles = getUserRoles();
+    return getRoleColorByName(roles[0]);
   };
 
   const renderFicheItem = ({ item }: { item: FicheSuivi }) => (
@@ -176,12 +182,17 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
               <Text variant="h5" style={styles.userName}>
                 {user?.first_name} {user?.last_name}
               </Text>
-              <Chip
-                label={getUserRole()}
-                size="sm"
-                color="default"
-                style={styles.roleChip}
-              />
+              <View style={styles.roleChips}>
+                {getUserRoles().map((role: string) => (
+                  <Chip
+                    key={role}
+                    label={role}
+                    size="sm"
+                    color="default"
+                    style={styles.roleChip}
+                  />
+                ))}
+              </View>
             </View>
           </View>
           <View style={styles.headerRight}>
@@ -335,8 +346,13 @@ const styles = StyleSheet.create({
     color: Colors.light,
     marginBottom: Spacing.xs,
   },
+  roleChips: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: Spacing.xs,
+  },
   roleChip: {
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-start' as const,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   headerRight: {
