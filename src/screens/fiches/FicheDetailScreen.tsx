@@ -23,7 +23,7 @@ import {
 } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { fichesSuiviService } from '../../api/services';
+import { fichesSuiviService, usersService } from '../../api/services';
 import { FicheSuivi } from '../../types';
 import { Colors } from '../../constants/colors';
 import { Spacing, BorderRadius } from '../../constants/spacing';
@@ -47,6 +47,7 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showRefusDialog, setShowRefusDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   useEffect(() => {
     loadFiche();
@@ -94,17 +95,52 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const canValidate = (): boolean => {
     if (!fiche || !user) return false;
     if (fiche.statut !== 'SOUMISE') return false;
-    return user.roles.some((r) => r.nom_role === 'Enseignant');
+    // Seul l'enseignant assigne a cette fiche peut valider
+    return fiche.enseignant === user.id;
   };
 
-  const handleValider = async () => {
+  const canResoumettre = (): boolean => {
+    if (!fiche || !user) return false;
+    if (fiche.statut !== 'REFUSEE') return false;
+    // Seul le delegue auteur peut resoumettre
+    return fiche.delegue === user.id;
+  };
+
+  const handleValider = async (password: string) => {
+    if (!password.trim()) {
+      showError('Veuillez saisir votre mot de passe');
+      return;
+    }
     setActionLoading(true);
     try {
-      await fichesSuiviService.valider(ficheId);
+      // Obtenir le token de validation via confirmation du mot de passe
+      const tokenRes = await usersService.confirmPassword(password);
+      const validationToken = tokenRes.data.validation_token;
+      // Valider la fiche avec le token
+      await fichesSuiviService.valider(ficheId, validationToken);
       showSuccess('Fiche validee avec succes');
+      setShowPasswordDialog(false);
+      await loadFiche();
+    } catch (error: any) {
+      const detail = error.response?.data?.detail;
+      if (detail?.includes('Mot de passe')) {
+        showError('Mot de passe incorrect', 'Erreur');
+      } else {
+        showError(detail || 'Impossible de valider la fiche', 'Erreur');
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResoumettre = async () => {
+    setActionLoading(true);
+    try {
+      await fichesSuiviService.resoumettre(ficheId);
+      showSuccess('Fiche resoumise avec succes');
       await loadFiche();
     } catch (error) {
-      showError('Impossible de valider la fiche', 'Erreur');
+      showError('Impossible de resoumettre la fiche', 'Erreur');
     } finally {
       setActionLoading(false);
     }
@@ -350,7 +386,7 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             <View style={styles.actionButtons}>
               <Button
                 title="Valider"
-                onPress={handleValider}
+                onPress={() => setShowPasswordDialog(true)}
                 variant="success"
                 icon="check-circle"
                 loading={actionLoading}
@@ -365,6 +401,20 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 style={styles.actionButton}
               />
             </View>
+          </Section>
+        )}
+
+        {/* Action delegue: resoumettre */}
+        {canResoumettre() && (
+          <Section title="Actions">
+            <Button
+              title="Resoumettre la fiche"
+              onPress={handleResoumettre}
+              variant="primary"
+              icon="refresh"
+              loading={actionLoading}
+              fullWidth
+            />
           </Section>
         )}
 
@@ -399,6 +449,17 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         submitText="Refuser"
         cancelText="Annuler"
         multiline
+      />
+
+      {/* Dialog de confirmation par mot de passe pour validation */}
+      <InputDialog
+        visible={showPasswordDialog}
+        onDismiss={() => setShowPasswordDialog(false)}
+        title="Confirmez votre mot de passe"
+        placeholder="Saisissez votre mot de passe..."
+        onSubmit={handleValider}
+        submitText="Valider la fiche"
+        cancelText="Annuler"
       />
     </ScreenContainer>
   );

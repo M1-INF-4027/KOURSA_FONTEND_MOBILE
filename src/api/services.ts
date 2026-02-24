@@ -32,6 +32,8 @@ export const usersService = {
   delete: (id: number) => api.delete(`/users/utilisateurs/${id}/`),
   changePassword: (id: number, password: string) =>
     api.patch<Utilisateur>(`/users/utilisateurs/${id}/`, { password }),
+  confirmPassword: (password: string) =>
+    api.post<{ validation_token: string }>('/users/utilisateurs/confirm-password/', { password }),
 };
 
 export const rolesService = {
@@ -107,7 +109,10 @@ export const fichesSuiviService = {
   delete: (id: number) => api.delete(`/teaching/fiches-suivi/${id}/`),
   // Actions specifiques
   getEnAttente: () => api.get<FicheSuivi[]>('/teaching/fiches-suivi/en-attente/'),
-  valider: (id: number) => api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/valider/`),
+  valider: (id: number, validationToken: string) =>
+    api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/valider/`, { validation_token: validationToken }),
   refuser: (id: number, motif: string) =>
     api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/refuser/`, { motif_refus: motif }),
+  resoumettre: (id: number) =>
+    api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/resoumettre/`),
 };

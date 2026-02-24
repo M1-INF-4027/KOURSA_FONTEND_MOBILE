@@ -23,7 +23,7 @@ import {
 import { useToast } from '../../components/ui/Toast';
 import { ConfirmDialog } from '../../components/ui/Dialog';
 import { fichesSuiviService, unitesEnseignementService } from '../../api/services';
-import { UniteEnseignement, TypeSeance } from '../../types';
+import { UniteEnseignement, EnseignantSimple, TypeSeance } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors } from '../../constants/colors';
 import { Spacing, BorderRadius, Shadows } from '../../constants/spacing';
@@ -43,6 +43,7 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
 
   // Form state
   const [selectedUe, setSelectedUe] = useState<number | null>(null);
+  const [selectedEnseignant, setSelectedEnseignant] = useState<number | null>(null);
   const [dateCours, setDateCours] = useState('');
   const [heureDebut, setHeureDebut] = useState('');
   const [heureFin, setHeureFin] = useState('');
@@ -51,10 +52,12 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
   const [titreChapitre, setTitreChapitre] = useState('');
   const [contenuAborde, setContenuAborde] = useState('');
   const [showUePicker, setShowUePicker] = useState(false);
+  const [showEnseignantPicker, setShowEnseignantPicker] = useState(false);
 
   // Form errors
   const [errors, setErrors] = useState({
     ue: '',
+    enseignant: '',
     dateCours: '',
     heureDebut: '',
     heureFin: '',
@@ -82,9 +85,23 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
     return ue ? `${ue.code_ue} - ${ue.libelle_ue}` : 'Selectionner une UE';
   };
 
+  const getSelectedUeEnseignants = (): EnseignantSimple[] => {
+    if (!selectedUe) return [];
+    const ue = ues.find((u) => u.id === selectedUe);
+    return ue?.enseignants_details || [];
+  };
+
+  const getSelectedEnseignantLabel = () => {
+    if (!selectedEnseignant) return 'Selectionner un enseignant';
+    const enseignants = getSelectedUeEnseignants();
+    const ens = enseignants.find((e) => e.id === selectedEnseignant);
+    return ens ? ens.nom_complet : 'Selectionner un enseignant';
+  };
+
   const validateForm = () => {
     const newErrors = {
       ue: '',
+      enseignant: '',
       dateCours: '',
       heureDebut: '',
       heureFin: '',
@@ -95,6 +112,11 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
 
     if (!selectedUe) {
       newErrors.ue = 'Veuillez selectionner une UE';
+      isValid = false;
+    }
+
+    if (!selectedEnseignant) {
+      newErrors.enseignant = 'Veuillez selectionner un enseignant';
       isValid = false;
     }
 
@@ -143,7 +165,7 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
     try {
       await fichesSuiviService.create({
         ue: selectedUe!,
-        delegue: user?.id,
+        enseignant: selectedEnseignant!,
         date_cours: dateCours,
         heure_debut: heureDebut,
         heure_fin: heureFin,
@@ -246,8 +268,11 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
                       ]}
                       onPress={() => {
                         setSelectedUe(ue.id);
+                        // Auto-select si un seul enseignant
+                        const enseignants = ue.enseignants_details || [];
+                        setSelectedEnseignant(enseignants.length === 1 ? enseignants[0].id : null);
                         setShowUePicker(false);
-                        setErrors({ ...errors, ue: '' });
+                        setErrors({ ...errors, ue: '', enseignant: '' });
                       }}>
                       <Text
                         variant="body"
@@ -264,6 +289,76 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
             )}
 
             <Spacer size="md" />
+
+            {/* Selecteur Enseignant */}
+            {selectedUe && (
+              <>
+                <Text variant="label" style={styles.label}>
+                  Enseignant *
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.uePicker,
+                    errors.enseignant ? styles.uePickerError : null,
+                  ]}
+                  activeOpacity={0.7}
+                  onPress={() => setShowEnseignantPicker(!showEnseignantPicker)}>
+                  <Text
+                    variant="body"
+                    color={selectedEnseignant ? 'primary' : 'tertiary'}
+                    style={styles.uePickerText}>
+                    {getSelectedEnseignantLabel()}
+                  </Text>
+                  <Icon
+                    name={showEnseignantPicker ? 'chevron-up' : 'chevron-down'}
+                    size={24}
+                    color={Colors.text.secondary}
+                  />
+                </TouchableOpacity>
+                {errors.enseignant ? (
+                  <Text variant="caption" style={styles.errorText}>
+                    {errors.enseignant}
+                  </Text>
+                ) : null}
+
+                {showEnseignantPicker && (
+                  <Card style={styles.ueList}>
+                    <CardContent>
+                      {getSelectedUeEnseignants().length === 0 ? (
+                        <Text variant="body" color="tertiary" style={{ padding: Spacing.sm }}>
+                          Aucun enseignant assigne a cette UE
+                        </Text>
+                      ) : (
+                        getSelectedUeEnseignants().map((ens) => (
+                          <TouchableOpacity
+                            key={ens.id}
+                            style={[
+                              styles.ueItem,
+                              selectedEnseignant === ens.id && styles.ueItemSelected,
+                            ]}
+                            onPress={() => {
+                              setSelectedEnseignant(ens.id);
+                              setShowEnseignantPicker(false);
+                              setErrors({ ...errors, enseignant: '' });
+                            }}>
+                            <Text
+                              variant="body"
+                              color={selectedEnseignant === ens.id ? 'primary' : 'primary'}>
+                              {ens.nom_complet}
+                            </Text>
+                            {selectedEnseignant === ens.id && (
+                              <Icon name="check" size={20} color={Colors.primary} />
+                            )}
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Spacer size="md" />
+              </>
+            )}
 
             <Input
               label="Date du cours *"

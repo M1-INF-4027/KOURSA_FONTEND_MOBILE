@@ -46,12 +46,21 @@ export interface Niveau {
 }
 
 // Types pour l'enseignement
+export interface EnseignantSimple {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  nom_complet: string;
+}
+
 export interface UniteEnseignement {
   id: number;
   code_ue: string;
   libelle_ue: string;
   semestre: number;
   enseignants: number[];
+  enseignants_details?: EnseignantSimple[];
   niveaux: number[];
 }
 
