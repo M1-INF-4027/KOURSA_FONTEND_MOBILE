@@ -18,8 +18,11 @@ import {
   Icon,
   Divider,
   Section,
+  Button,
+  InputDialog,
 } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 import { fichesSuiviService } from '../../api/services';
 import { FicheSuivi } from '../../types';
 import { Colors } from '../../constants/colors';
@@ -37,10 +40,13 @@ interface Props {
 const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const { ficheId } = route.params;
   const insets = useSafeAreaInsets();
-  const { showError } = useToast();
+  const { user } = useAuth();
+  const { showError, showSuccess } = useToast();
 
   const [fiche, setFiche] = useState<FicheSuivi | null>(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showRefusDialog, setShowRefusDialog] = useState(false);
 
   useEffect(() => {
     loadFiche();
@@ -82,6 +88,43 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         return 'En attente de validation';
       default:
         return statut;
+    }
+  };
+
+  const canValidate = (): boolean => {
+    if (!fiche || !user) return false;
+    if (fiche.statut !== 'SOUMISE') return false;
+    return user.roles.some((r) => r.nom_role === 'Enseignant');
+  };
+
+  const handleValider = async () => {
+    setActionLoading(true);
+    try {
+      await fichesSuiviService.valider(ficheId);
+      showSuccess('Fiche validee avec succes');
+      await loadFiche();
+    } catch (error) {
+      showError('Impossible de valider la fiche', 'Erreur');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRefuser = async (motif: string) => {
+    if (!motif.trim()) {
+      showError('Veuillez indiquer un motif de refus');
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await fichesSuiviService.refuser(ficheId, motif);
+      showSuccess('Fiche refusee');
+      setShowRefusDialog(false);
+      await loadFiche();
+    } catch (error) {
+      showError('Impossible de refuser la fiche', 'Erreur');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -301,6 +344,43 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           </Section>
         ) : null}
 
+        {/* Actions enseignant */}
+        {canValidate() && (
+          <Section title="Actions">
+            <View style={styles.actionButtons}>
+              <Button
+                title="Valider"
+                onPress={handleValider}
+                variant="success"
+                icon="check-circle"
+                loading={actionLoading}
+                style={styles.actionButton}
+              />
+              <Button
+                title="Refuser"
+                onPress={() => setShowRefusDialog(true)}
+                variant="danger"
+                icon="close-circle"
+                disabled={actionLoading}
+                style={styles.actionButton}
+              />
+            </View>
+          </Section>
+        )}
+
+        {/* Message statut final */}
+        {fiche.statut !== 'SOUMISE' && (
+          <Card style={styles.statusMessageCard}>
+            <CardContent>
+              <Text variant="body" color="secondary" align="center">
+                {fiche.statut === 'VALIDEE'
+                  ? 'Cette fiche a ete validee.'
+                  : 'Cette fiche a ete refusee.'}
+              </Text>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Date de soumission */}
         <Text variant="caption" color="tertiary" style={styles.soumissionDate}>
           Soumise le {fiche.date_soumission}
@@ -308,6 +388,18 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
         <Spacer size="xl" />
       </ScrollView>
+
+      {/* Dialog de refus */}
+      <InputDialog
+        visible={showRefusDialog}
+        onDismiss={() => setShowRefusDialog(false)}
+        title="Motif du refus"
+        placeholder="Indiquez la raison du refus..."
+        onSubmit={handleRefuser}
+        submitText="Refuser"
+        cancelText="Annuler"
+        multiline
+      />
     </ScreenContainer>
   );
 };
@@ -424,6 +516,17 @@ const styles = StyleSheet.create({
   refusText: {
     flex: 1,
     lineHeight: 22,
+  },
+  // Actions
+  actionButtons: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  actionButton: {
+    flex: 1,
+  },
+  statusMessageCard: {
+    marginTop: Spacing.md,
   },
   // Soumission
   soumissionDate: {

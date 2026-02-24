@@ -36,7 +36,7 @@ interface Props {
 const DashboardScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
-  const { showError } = useToast();
+  const { showError, showInfo } = useToast();
 
   const [fichesEnAttente, setFichesEnAttente] = useState<FicheSuivi[]>([]);
   const [loading, setLoading] = useState(false);
@@ -189,7 +189,7 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
               icon="bell-outline"
               size="md"
               color={Colors.light}
-              onPress={() => {}}
+              onPress={() => showInfo('Les notifications seront disponibles prochainement', 'Bientot disponible')}
             />
             <IconButton
               icon="logout"

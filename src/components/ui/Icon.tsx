@@ -7,6 +7,7 @@ import React from 'react';
 import { ViewStyle } from 'react-native';
 import {
   User,
+  UserCheck,
   UserCircle,
   Users,
   AlertTriangle,
@@ -19,6 +20,7 @@ import {
   CheckCircle,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Clock,
   X,
@@ -58,6 +60,7 @@ const iconMap: Record<string, LucideIcon> = {
   'account-outline': User,
   'account-circle': UserCircle,
   'account-circle-outline': UserCircle,
+  'account-check': UserCheck,
   'account-group': Users,
   'account-group-outline': Users,
 
@@ -68,6 +71,7 @@ const iconMap: Record<string, LucideIcon> = {
   // Navigation
   'arrow-left': ArrowLeft,
   'chevron-down': ChevronDown,
+  'chevron-right': ChevronRight,
   'chevron-up': ChevronUp,
 
   // Actions

@@ -23,6 +23,9 @@ import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import FichesListScreen from '../screens/fiches/FichesListScreen';
 import CreateFicheScreen from '../screens/fiches/CreateFicheScreen';
 import FicheDetailScreen from '../screens/fiches/FicheDetailScreen';
+import AcademicScreen from '../screens/academic/AcademicScreen';
+import UsersScreen from '../screens/users/UsersScreen';
+import ProfileScreen from '../screens/profile/ProfileScreen';
 
 // Types de navigation
 export type AuthStackParamList = {
@@ -61,23 +64,6 @@ const AuthNavigator = () => {
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
     </AuthStack.Navigator>
-  );
-};
-
-/**
- * Ecran placeholder temporaire
- */
-const PlaceholderScreen = ({ title }: { title: string }) => {
-  return (
-    <View style={styles.placeholderContainer}>
-      <Icon name="construction" size={64} color={Colors.gray[300]} />
-      <Text variant="h5" color="secondary" style={styles.placeholderTitle}>
-        {title}
-      </Text>
-      <Text variant="body" color="tertiary" style={styles.placeholderText}>
-        Cette fonctionnalite est en cours de developpement
-      </Text>
-    </View>
   );
 };
 
@@ -129,19 +115,19 @@ const MainTabs = () => {
       />
       <Tab.Screen
         name="Academic"
-        options={{ title: 'Academique' }}>
-        {() => <PlaceholderScreen title="Academique" />}
-      </Tab.Screen>
+        component={AcademicScreen}
+        options={{ title: 'Academique' }}
+      />
       <Tab.Screen
         name="Users"
-        options={{ title: 'Utilisateurs' }}>
-        {() => <PlaceholderScreen title="Utilisateurs" />}
-      </Tab.Screen>
+        component={UsersScreen}
+        options={{ title: 'Utilisateurs' }}
+      />
       <Tab.Screen
         name="Profile"
-        options={{ title: 'Profil' }}>
-        {() => <PlaceholderScreen title="Mon Profil" />}
-      </Tab.Screen>
+        component={ProfileScreen}
+        options={{ title: 'Profil' }}
+      />
     </Tab.Navigator>
   );
 };
@@ -223,21 +209,6 @@ const styles = StyleSheet.create({
   tabBarLabel: {
     fontSize: 11,
     fontWeight: '500',
-  },
-  // Placeholder
-  placeholderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.background.primary,
-    padding: 24,
-  },
-  placeholderTitle: {
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  placeholderText: {
-    textAlign: 'center',
   },
   // Loading
   loadingContainer: {

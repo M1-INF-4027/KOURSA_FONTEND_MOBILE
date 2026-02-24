@@ -30,6 +30,8 @@ export const usersService = {
   update: (id: number, data: Partial<Utilisateur>) =>
     api.patch<Utilisateur>(`/users/utilisateurs/${id}/`, data),
   delete: (id: number) => api.delete(`/users/utilisateurs/${id}/`),
+  changePassword: (id: number, password: string) =>
+    api.patch<Utilisateur>(`/users/utilisateurs/${id}/`, { password }),
 };
 
 export const rolesService = {
@@ -78,6 +80,10 @@ export const niveauxService = {
 // ==================== TEACHING ====================
 export const unitesEnseignementService = {
   getAll: () => api.get<UniteEnseignement[]>('/teaching/unites-enseignement/'),
+  getBySemestre: (semestreId: number) =>
+    api.get<UniteEnseignement[]>(`/teaching/unites-enseignement/?semestre_id=${semestreId}`),
+  getByAnnee: (anneeId: number) =>
+    api.get<UniteEnseignement[]>(`/teaching/unites-enseignement/?annee_academique=${anneeId}`),
   getById: (id: number) =>
     api.get<UniteEnseignement>(`/teaching/unites-enseignement/${id}/`),
   create: (data: Partial<UniteEnseignement>) =>
@@ -89,6 +95,10 @@ export const unitesEnseignementService = {
 
 export const fichesSuiviService = {
   getAll: () => api.get<FicheSuivi[]>('/teaching/fiches-suivi/'),
+  getBySemestre: (semestreId: number) =>
+    api.get<FicheSuivi[]>(`/teaching/fiches-suivi/?semestre_id=${semestreId}`),
+  getByAnnee: (anneeId: number) =>
+    api.get<FicheSuivi[]>(`/teaching/fiches-suivi/?annee_academique=${anneeId}`),
   getById: (id: number) => api.get<FicheSuivi>(`/teaching/fiches-suivi/${id}/`),
   create: (data: Partial<FicheSuivi>) =>
     api.post<FicheSuivi>('/teaching/fiches-suivi/', data),
