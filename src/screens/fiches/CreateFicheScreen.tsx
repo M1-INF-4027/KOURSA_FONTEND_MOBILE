@@ -131,17 +131,24 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
     if (!heureDebut) {
       newErrors.heureDebut = 'Requise';
       isValid = false;
-    } else if (!/^\d{2}:\d{2}$/.test(heureDebut)) {
-      newErrors.heureDebut = 'Format: HH:MM';
+    } else if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(heureDebut)) {
+      newErrors.heureDebut = 'Format: HH:MM (00:00-23:59)';
       isValid = false;
     }
 
     if (!heureFin) {
       newErrors.heureFin = 'Requise';
       isValid = false;
-    } else if (!/^\d{2}:\d{2}$/.test(heureFin)) {
-      newErrors.heureFin = 'Format: HH:MM';
+    } else if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(heureFin)) {
+      newErrors.heureFin = 'Format: HH:MM (00:00-23:59)';
       isValid = false;
+    }
+
+    if (heureDebut && heureFin && !newErrors.heureDebut && !newErrors.heureFin) {
+      if (heureFin <= heureDebut) {
+        newErrors.heureFin = "L'heure de fin doit etre apres le debut";
+        isValid = false;
+      }
     }
 
     if (!titreChapitre.trim()) {
