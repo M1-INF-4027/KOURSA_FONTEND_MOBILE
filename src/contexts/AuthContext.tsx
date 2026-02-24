@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Utilisateur, AuthState, LoginCredentials, RegisterData } from '../types';
-import { usersService } from '../api/services';
+import { authService, usersService } from '../api/services';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: Utilisateur) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +29,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
     user: null,
     token: null,
+    refreshToken: null,
     isLoading: true,
     isAuthenticated: false,
   });
@@ -39,18 +41,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadStoredAuth = async () => {
     try {
-      const [storedToken, storedUser] = await Promise.all([
+      const [storedToken, storedRefreshToken, storedUser] = await Promise.all([
         AsyncStorage.getItem('authToken'),
+        AsyncStorage.getItem('refreshToken'),
         AsyncStorage.getItem('user'),
       ]);
 
       if (storedToken && storedUser) {
+        const user = JSON.parse(storedUser);
         setState({
-          user: JSON.parse(storedUser),
+          user,
           token: storedToken,
+          refreshToken: storedRefreshToken,
           isLoading: false,
           isAuthenticated: true,
         });
+
+        // Valider le token en arriere-plan en appelant /me
+        try {
+          const response = await authService.getMe();
+          const freshUser = response.data;
+          setState((prev) => ({ ...prev, user: freshUser }));
+          await AsyncStorage.setItem('user', JSON.stringify(freshUser));
+        } catch {
+          // Si 401, le token est invalide - le refresh sera tente par l'intercepteur
+          // Si le refresh echoue aussi, forceLogout sera appele par l'intercepteur
+        }
       } else {
         setState((prev) => ({ ...prev, isLoading: false }));
       }
@@ -62,64 +78,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials) => {
     try {
-      // Note: Le backend n'a pas encore d'endpoint d'authentification JWT
-      // Pour l'instant, on simule en recuperant l'utilisateur par email
-      const response = await usersService.getAll();
-      const user = response.data.find((u) => u.email === credentials.email);
+      const response = await authService.login(credentials);
+      const { access, refresh, user } = response.data;
 
-      if (!user) {
-        throw new Error('Utilisateur non trouve');
-      }
-
-      // Simuler un token (a remplacer par un vrai JWT quand le backend le supportera)
-      const fakeToken = `fake-token-${user.id}-${Date.now()}`;
-
-      await AsyncStorage.setItem('authToken', fakeToken);
+      await AsyncStorage.setItem('authToken', access);
+      await AsyncStorage.setItem('refreshToken', refresh);
       await AsyncStorage.setItem('user', JSON.stringify(user));
 
       setState({
         user,
-        token: fakeToken,
+        token: access,
+        refreshToken: refresh,
         isLoading: false,
         isAuthenticated: true,
       });
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+    } catch (error: any) {
+      // Transformer les erreurs backend en messages lisibles
+      if (error.response?.status === 401) {
+        throw new Error('Email ou mot de passe incorrect');
+      }
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Erreur de connexion au serveur');
     }
   };
 
   const register = async (data: RegisterData) => {
     try {
-      const response = await usersService.create(data);
-      const user = response.data;
+      // Creer le compte
+      await usersService.create(data);
 
-      // Auto-login apres inscription
-      const fakeToken = `fake-token-${user.id}-${Date.now()}`;
-
-      await AsyncStorage.setItem('authToken', fakeToken);
-      await AsyncStorage.setItem('user', JSON.stringify(user));
-
-      setState({
-        user,
-        token: fakeToken,
-        isLoading: false,
-        isAuthenticated: true,
-      });
-    } catch (error) {
-      console.error('Register error:', error);
+      // Se connecter automatiquement apres inscription
+      await login({ email: data.email, password: data.password });
+    } catch (error: any) {
+      if (error.response?.data) {
+        // Extraire les erreurs de validation du backend
+        const errors = error.response.data;
+        const messages = Object.entries(errors)
+          .map(([field, msgs]) => {
+            const msgList = Array.isArray(msgs) ? msgs : [msgs];
+            return `${field}: ${msgList.join(', ')}`;
+          })
+          .join('\n');
+        throw new Error(messages || 'Erreur lors de l\'inscription');
+      }
       throw error;
     }
   };
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem('authToken');
-      await AsyncStorage.removeItem('user');
+      await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'user']);
 
       setState({
         user: null,
         token: null,
+        refreshToken: null,
         isLoading: false,
         isAuthenticated: false,
       });
@@ -131,7 +146,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateUser = (user: Utilisateur) => {
     setState((prev) => ({ ...prev, user }));
-    AsyncStorage.setItem('user', JSON.stringify(user));
+    AsyncStorage.setItem('user', JSON.stringify(user)).catch((err) =>
+      console.error('Error saving user:', err)
+    );
+  };
+
+  const refreshUser = async () => {
+    try {
+      const response = await authService.getMe();
+      const user = response.data;
+      setState((prev) => ({ ...prev, user }));
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+    }
   };
 
   return (
@@ -142,6 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         register,
         logout,
         updateUser,
+        refreshUser,
       }}>
       {children}
     </AuthContext.Provider>

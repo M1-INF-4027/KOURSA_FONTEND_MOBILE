@@ -22,6 +22,7 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import FichesListScreen from '../screens/fiches/FichesListScreen';
 import CreateFicheScreen from '../screens/fiches/CreateFicheScreen';
+import FicheDetailScreen from '../screens/fiches/FicheDetailScreen';
 
 // Types de navigation
 export type AuthStackParamList = {
@@ -165,6 +166,13 @@ const MainNavigator = () => {
         options={{
           animation: 'slide_from_bottom',
           presentation: 'modal',
+        }}
+      />
+      <MainStack.Screen
+        name="FicheDetail"
+        component={FicheDetailScreen}
+        options={{
+          animation: 'slide_from_right',
         }}
       />
     </MainStack.Navigator>

@@ -91,12 +91,20 @@ export interface RegisterData {
   password: string;
   first_name: string;
   last_name: string;
-  niveau_represente: number;
+  roles_ids?: number[];
+  niveau_represente?: number | null;
+}
+
+export interface AuthTokenResponse {
+  access: string;
+  refresh: string;
+  user: Utilisateur;
 }
 
 export interface AuthState {
   user: Utilisateur | null;
   token: string | null;
+  refreshToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
 }

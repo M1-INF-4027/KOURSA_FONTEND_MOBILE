@@ -9,7 +9,18 @@ import {
   UniteEnseignement,
   FicheSuivi,
   RegisterData,
+  AuthTokenResponse,
+  LoginCredentials,
 } from '../types';
+
+// ==================== AUTH ====================
+export const authService = {
+  login: (credentials: LoginCredentials) =>
+    api.post<AuthTokenResponse>('/auth/token/', credentials),
+  refreshToken: (refreshToken: string) =>
+    api.post<{ access: string; refresh?: string }>('/auth/token/refresh/', { refresh: refreshToken }),
+  getMe: () => api.get<Utilisateur>('/users/utilisateurs/me/'),
+};
 
 // ==================== USERS ====================
 export const usersService = {
