@@ -44,6 +44,7 @@ export type MainTabParamList = {
 export type MainStackParamList = {
   MainTabs: undefined;
   CreateFiche: undefined;
+  EditFiche: { ficheId: number };
   FicheDetail: { ficheId: number };
 };
 
@@ -148,6 +149,14 @@ const MainNavigator = () => {
       />
       <MainStack.Screen
         name="CreateFiche"
+        component={CreateFicheScreen}
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <MainStack.Screen
+        name="EditFiche"
         component={CreateFicheScreen}
         options={{
           animation: 'slide_from_bottom',

@@ -3,8 +3,9 @@
  * Ecran de detail d'une fiche de suivi
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ScreenContainer,
@@ -52,6 +53,13 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   useEffect(() => {
     loadFiche();
   }, [ficheId]);
+
+  // Reload when returning from edit screen
+  useFocusEffect(
+    useCallback(() => {
+      loadFiche();
+    }, [ficheId])
+  );
 
   const loadFiche = async () => {
     setLoading(true);
@@ -133,17 +141,9 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
-  const handleResoumettre = async () => {
-    setActionLoading(true);
-    try {
-      await fichesSuiviService.resoumettre(ficheId);
-      showSuccess('Fiche resoumise avec succes');
-      await loadFiche();
-    } catch (error) {
-      showError('Impossible de resoumettre la fiche', 'Erreur');
-    } finally {
-      setActionLoading(false);
-    }
+  const handleResoumettre = () => {
+    // Navigate to edit screen so delegue can modify before resubmitting
+    navigation.navigate('EditFiche', { ficheId });
   };
 
   const handleRefuser = async (motif: string) => {
@@ -408,11 +408,10 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         {canResoumettre() && (
           <Section title="Actions">
             <Button
-              title="Resoumettre la fiche"
+              title="Modifier et resoumettre"
               onPress={handleResoumettre}
               variant="primary"
-              icon="refresh"
-              loading={actionLoading}
+              icon="pencil"
               fullWidth
             />
           </Section>

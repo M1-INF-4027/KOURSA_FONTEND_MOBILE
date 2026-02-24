@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ScreenContainer,
@@ -30,15 +30,23 @@ import { Spacing, BorderRadius, Shadows } from '../../constants/spacing';
 
 interface Props {
   navigation: any;
+  route?: {
+    params?: {
+      ficheId?: number;
+    };
+  };
 }
 
-const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
+const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
+  const ficheId = route?.params?.ficheId;
+  const isEditMode = !!ficheId;
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
 
   const [ues, setUes] = useState<UniteEnseignement[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingFiche, setLoadingFiche] = useState(isEditMode);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   // Form state
@@ -68,6 +76,34 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
   useEffect(() => {
     loadUes();
   }, []);
+
+  // Load fiche data in edit mode
+  useEffect(() => {
+    if (isEditMode && ficheId) {
+      loadFicheData();
+    }
+  }, [ficheId]);
+
+  const loadFicheData = async () => {
+    try {
+      const response = await fichesSuiviService.getById(ficheId!);
+      const fiche = response.data;
+      setSelectedUe(fiche.ue);
+      setSelectedEnseignant(fiche.enseignant);
+      setDateCours(fiche.date_cours || '');
+      setHeureDebut(fiche.heure_debut || '');
+      setHeureFin(fiche.heure_fin || '');
+      setSalle(fiche.salle || '');
+      setTypeSeance((fiche.type_seance as TypeSeance) || 'CM');
+      setTitreChapitre(fiche.titre_chapitre || '');
+      setContenuAborde(fiche.contenu_aborde || '');
+    } catch (err) {
+      showError('Impossible de charger la fiche', 'Erreur');
+      navigation.goBack();
+    } finally {
+      setLoadingFiche(false);
+    }
+  };
 
   const loadUes = async () => {
     try {
@@ -170,7 +206,7 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
 
     setLoading(true);
     try {
-      await fichesSuiviService.create({
+      const payload = {
         ue: selectedUe!,
         enseignant: selectedEnseignant!,
         date_cours: dateCours,
@@ -180,11 +216,19 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
         type_seance: typeSeance,
         titre_chapitre: titreChapitre,
         contenu_aborde: contenuAborde,
-      });
+      };
+
+      if (isEditMode && ficheId) {
+        // Update the fiche then resoumettre
+        await fichesSuiviService.update(ficheId, payload);
+        await fichesSuiviService.resoumettre(ficheId);
+      } else {
+        await fichesSuiviService.create(payload);
+      }
       setShowSuccessDialog(true);
     } catch (err: any) {
       showError(
-        err.response?.data?.message || 'Erreur lors de la creation',
+        err.response?.data?.message || err.response?.data?.detail || (isEditMode ? 'Erreur lors de la modification' : 'Erreur lors de la creation'),
         'Echec'
       );
     } finally {
@@ -203,6 +247,23 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
     { value: 'TP', label: 'Travaux Pratiques', icon: 'flask' },
   ];
 
+  if (loadingFiche) {
+    return (
+      <ScreenContainer backgroundColor={Colors.primary} statusBarStyle="light-content" edges={[]}>
+        <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+          <View style={styles.headerRow}>
+            <IconButton icon="close" size="md" color={Colors.light} onPress={() => navigation.goBack()} />
+            <Text variant="h5" style={styles.headerTitle}>Modifier la fiche</Text>
+            <View style={{ width: 40 }} />
+          </View>
+        </View>
+        <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </ScreenContainer>
+    );
+  }
+
   return (
     <ScreenContainer
       backgroundColor={Colors.primary}
@@ -218,7 +279,7 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => navigation.goBack()}
           />
           <Text variant="h5" style={styles.headerTitle}>
-            Nouvelle fiche
+            {isEditMode ? 'Modifier la fiche' : 'Nouvelle fiche'}
           </Text>
           <View style={{ width: 40 }} />
         </View>
@@ -480,11 +541,11 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
           <Spacer size="lg" />
 
           <Button
-            title={loading ? 'Soumission...' : 'Soumettre la fiche'}
+            title={loading ? (isEditMode ? 'Modification...' : 'Soumission...') : (isEditMode ? 'Modifier et resoumettre' : 'Soumettre la fiche')}
             onPress={handleSubmit}
             loading={loading}
             fullWidth
-            icon="send"
+            icon={isEditMode ? 'refresh' : 'send'}
           />
 
           <Spacer size="3xl" />
@@ -495,7 +556,9 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation }) => {
       <ConfirmDialog
         visible={showSuccessDialog}
         title="Succes"
-        message="Votre fiche de suivi a ete creee avec succes et soumise pour validation."
+        message={isEditMode
+          ? "Votre fiche a ete modifiee et resoumise pour validation."
+          : "Votre fiche de suivi a ete creee avec succes et soumise pour validation."}
         confirmText="OK"
         onConfirm={handleSuccessConfirm}
         onCancel={handleSuccessConfirm}
