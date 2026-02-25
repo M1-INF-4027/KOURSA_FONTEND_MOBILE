@@ -187,8 +187,8 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
                   <Chip
                     key={role}
                     label={role}
-                    size="sm"
-                    color="default"
+                    size="small"
+                    color="neutral"
                     style={styles.roleChip}
                   />
                 ))}
