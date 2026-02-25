@@ -198,13 +198,13 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.headerRight}>
             <IconButton
               icon="bell-outline"
-              size="md"
+              size={22}
               color={Colors.light}
               onPress={() => showInfo('Les notifications seront disponibles prochainement', 'Bientot disponible')}
             />
             <IconButton
               icon="logout"
-              size="md"
+              size={22}
               color={Colors.light}
               onPress={logout}
             />
