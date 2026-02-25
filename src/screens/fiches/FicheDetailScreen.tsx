@@ -171,7 +171,7 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={styles.headerRow}>
             <IconButton
               icon="arrow-left"
-              size="md"
+              size={22}
               color={Colors.light}
               onPress={() => navigation.goBack()}
             />
@@ -195,7 +195,7 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           <View style={styles.headerRow}>
             <IconButton
               icon="arrow-left"
-              size="md"
+              size={22}
               color={Colors.light}
               onPress={() => navigation.goBack()}
             />
@@ -222,7 +222,7 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         <View style={styles.headerRow}>
           <IconButton
             icon="arrow-left"
-            size="md"
+            size={22}
             color={Colors.light}
             onPress={() => navigation.goBack()}
           />

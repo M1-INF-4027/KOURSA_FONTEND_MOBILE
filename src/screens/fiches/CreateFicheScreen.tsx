@@ -252,7 +252,7 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
       <ScreenContainer backgroundColor={Colors.primary} statusBarStyle="light-content" edges={[]}>
         <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
           <View style={styles.headerRow}>
-            <IconButton icon="close" size="md" color={Colors.light} onPress={() => navigation.goBack()} />
+            <IconButton icon="close" size={22} color={Colors.light} onPress={() => navigation.goBack()} />
             <Text variant="h5" style={styles.headerTitle}>Modifier la fiche</Text>
             <View style={{ width: 40 }} />
           </View>
@@ -274,7 +274,7 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
         <View style={styles.headerRow}>
           <IconButton
             icon="close"
-            size="md"
+            size={22}
             color={Colors.light}
             onPress={() => navigation.goBack()}
           />
@@ -356,7 +356,7 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
               </Card>
             )}
 
-            <Spacer size="md" />
+            <Spacer size={22} />
 
             {/* Selecteur Enseignant */}
             {selectedUe && (
@@ -424,7 +424,7 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
                   </Card>
                 )}
 
-                <Spacer size="md" />
+                <Spacer size={22} />
               </>
             )}
 

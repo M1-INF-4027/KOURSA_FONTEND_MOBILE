@@ -158,7 +158,7 @@ const FichesListScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.headerRow}>
           <IconButton
             icon="arrow-left"
-            size="md"
+            size={22}
             color={Colors.light}
             onPress={() => navigation.goBack()}
           />
@@ -167,7 +167,7 @@ const FichesListScreen: React.FC<Props> = ({ navigation }) => {
           </Text>
           <IconButton
             icon="filter-variant"
-            size="md"
+            size={22}
             color={Colors.light}
             onPress={() => {}}
           />
@@ -195,8 +195,8 @@ const FichesListScreen: React.FC<Props> = ({ navigation }) => {
               label={filter.label}
               selected={filterStatus === filter.value}
               onPress={() => setFilterStatus(filter.value)}
-              color={filterStatus === filter.value ? 'primary' : 'default'}
-              size="sm"
+              color={filterStatus === filter.value ? 'primary' : 'neutral'}
+              size="small"
               style={styles.filterChip}
             />
           ))}
