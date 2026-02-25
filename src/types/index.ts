@@ -36,6 +36,8 @@ export interface Filiere {
   nom_filiere: string;
   departement: number;
   nom_departement: string;
+  faculte: number;
+  nom_faculte: string;
 }
 
 export interface Niveau {

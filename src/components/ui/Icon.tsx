@@ -13,8 +13,12 @@ import {
   AlertTriangle,
   AlertCircle,
   ArrowLeft,
+  ArrowRight,
   Bell,
+  Bookmark,
   BookOpen,
+  Building,
+  Building2,
   Calendar,
   Check,
   CheckCircle,
@@ -27,6 +31,9 @@ import {
   XCircle,
   Construction,
   DoorOpen,
+  FolderTree,
+  Landmark,
+  Layers,
   Mail,
   Eye,
   EyeOff,
@@ -70,6 +77,7 @@ const iconMap: Record<string, LucideIcon> = {
 
   // Navigation
   'arrow-left': ArrowLeft,
+  'arrow-right': ArrowRight,
   'chevron-down': ChevronDown,
   'chevron-right': ChevronRight,
   'chevron-up': ChevronUp,
@@ -111,10 +119,19 @@ const iconMap: Record<string, LucideIcon> = {
   'information': Info,
   'construction': Construction,
 
-  // Education
+  // Education & Academic structure
   'school': GraduationCap,
   'school-outline': GraduationCap,
   'flask': FlaskConical,
+  'domain': Landmark,
+  'landmark': Landmark,
+  'office-building-outline': Building2,
+  'building': Building,
+  'bookmark-outline': Bookmark,
+  'bookmark': Bookmark,
+  'stairs': Layers,
+  'layers': Layers,
+  'folder-tree': FolderTree,
 
   // Dashboard
   'view-dashboard': LayoutDashboard,
