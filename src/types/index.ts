@@ -112,6 +112,24 @@ export interface AuthTokenResponse {
   user: Utilisateur;
 }
 
+// Types pour les notifications
+export type NotificationType =
+  | 'FICHE_SOUMISE'
+  | 'FICHE_VALIDEE'
+  | 'FICHE_REFUSEE'
+  | 'FICHE_RESOUMISE'
+  | 'COMPTE_APPROUVE';
+
+export interface NotificationItem {
+  id: number;
+  title: string;
+  body: string;
+  notification_type: NotificationType;
+  related_object_id: number | null;
+  is_read: boolean;
+  created_at: string;
+}
+
 export interface AuthState {
   user: Utilisateur | null;
   token: string | null;

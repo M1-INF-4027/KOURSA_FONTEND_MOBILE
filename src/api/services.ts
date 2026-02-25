@@ -34,6 +34,14 @@ export const usersService = {
     api.patch<Utilisateur>(`/users/utilisateurs/${id}/`, { password }),
   confirmPassword: (password: string) =>
     api.post<{ validation_token: string }>('/users/utilisateurs/confirm-password/', { password }),
+  getMesUtilisateurs: () =>
+    api.get('/users/utilisateurs/mes-utilisateurs/'),
+};
+
+// ==================== FCM ====================
+export const fcmService = {
+  registerToken: (fcm_token: string) =>
+    api.post('/users/utilisateurs/register-fcm-token/', { fcm_token }),
 };
 
 export const rolesService = {

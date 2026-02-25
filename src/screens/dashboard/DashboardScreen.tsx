@@ -23,6 +23,7 @@ import {
   Icon,
 } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { useToast } from '../../components/ui/Toast';
 import { fichesSuiviService } from '../../api/services';
 import { FicheSuivi } from '../../types';
@@ -36,7 +37,13 @@ interface Props {
 const DashboardScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const { showError, showInfo } = useToast();
+
+  const userIsChef = user?.roles?.some(
+    (r: any) =>
+      r.nom_role === 'Chef de Département' || r.nom_role === 'Chef de Departement'
+  );
 
   const [fichesEnAttente, setFichesEnAttente] = useState<FicheSuivi[]>([]);
   const [loading, setLoading] = useState(false);
@@ -196,12 +203,33 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
             </View>
           </View>
           <View style={styles.headerRight}>
-            <IconButton
-              icon="bell-outline"
-              size={22}
-              color={Colors.light}
-              onPress={() => showInfo('Les notifications seront disponibles prochainement', 'Bientot disponible')}
-            />
+            {userIsChef && (
+              <IconButton
+                icon="menu"
+                size={22}
+                color={Colors.light}
+                onPress={() => {
+                  try {
+                    (navigation as any).getParent()?.openDrawer();
+                  } catch {}
+                }}
+              />
+            )}
+            <View>
+              <IconButton
+                icon="bell-outline"
+                size={22}
+                color={Colors.light}
+                onPress={() => navigation.navigate('Notifications')}
+              />
+              {unreadCount > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text variant="caption" style={styles.notifBadgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
             <IconButton
               icon="logout"
               size={22}
@@ -359,6 +387,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
+  },
+  notifBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: Colors.error,
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  notifBadgeText: {
+    color: Colors.light,
+    fontSize: 10,
+    fontWeight: '700',
   },
   // Content
   content: {

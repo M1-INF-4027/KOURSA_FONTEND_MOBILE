@@ -12,6 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider } from './src/contexts/AuthContext';
+import { NotificationProvider } from './src/contexts/NotificationContext';
 import { ToastProvider } from './src/components/ui/Toast';
 import AppNavigator from './src/navigation/AppNavigator';
 import { Colors } from './src/constants/colors';
@@ -29,14 +30,16 @@ function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
-          <ToastProvider>
-            <StatusBar
-              barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-              backgroundColor={Colors.primary}
-              translucent
-            />
-            <AppNavigator />
-          </ToastProvider>
+          <NotificationProvider>
+            <ToastProvider>
+              <StatusBar
+                barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+                backgroundColor={Colors.primary}
+                translucent
+              />
+              <AppNavigator />
+            </ToastProvider>
+          </NotificationProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
