@@ -38,6 +38,7 @@ export const Input: React.FC<InputProps> = ({
   onRightIconPress,
   containerStyle,
   disabled = false,
+  multiline,
   style,
   ...props
 }) => {
@@ -69,6 +70,7 @@ export const Input: React.FC<InputProps> = ({
             borderColor: getBorderColor(),
             backgroundColor: getBackgroundColor(),
           },
+          multiline && { height: undefined, minHeight: ComponentHeights.input, alignItems: 'flex-start' },
           isFocused && styles.inputFocused,
           error && styles.inputError,
         ]}>
@@ -77,7 +79,7 @@ export const Input: React.FC<InputProps> = ({
             name={leftIcon}
             size={20}
             color={isFocused ? Colors.primary : Colors.gray[400]}
-            style={styles.leftIcon}
+            style={[styles.leftIcon, multiline && { marginTop: Spacing.md }]}
           />
         )}
 
@@ -86,10 +88,12 @@ export const Input: React.FC<InputProps> = ({
             styles.input,
             Typography.body,
             { color: disabled ? Colors.gray[400] : Colors.text.primary },
+            multiline && { height: undefined },
             style,
           ]}
           placeholderTextColor={Colors.gray[400]}
           editable={!disabled}
+          multiline={multiline}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           {...props}

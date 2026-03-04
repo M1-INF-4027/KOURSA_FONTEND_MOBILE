@@ -4,8 +4,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   ScreenContainer,
   Text,
@@ -21,8 +22,8 @@ import {
   Icon,
 } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
-import { ConfirmDialog } from '../../components/ui/Dialog';
-import { fichesSuiviService, unitesEnseignementService } from '../../api/services';
+import { AlertDialog } from '../../components/ui/Dialog';
+import { fichesSuiviService, unitesEnseignementService, sallesService } from '../../api/services';
 import { UniteEnseignement, EnseignantSimple, TypeSeance } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors } from '../../constants/colors';
@@ -45,22 +46,30 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
   const { showError, showSuccess } = useToast();
 
   const [ues, setUes] = useState<UniteEnseignement[]>([]);
+  const [sallesList, setSallesList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingFiche, setLoadingFiche] = useState(isEditMode);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [conflicts, setConflicts] = useState<any[]>([]);
 
   // Form state
   const [selectedUe, setSelectedUe] = useState<number | null>(null);
   const [selectedEnseignant, setSelectedEnseignant] = useState<number | null>(null);
-  const [dateCours, setDateCours] = useState('');
+  const [dateCours, setDateCours] = useState(new Date().toISOString().split('T')[0]);
   const [heureDebut, setHeureDebut] = useState('');
   const [heureFin, setHeureFin] = useState('');
-  const [salle, setSalle] = useState('');
+  const [selectedSalle, setSelectedSalle] = useState<number | null>(null);
+  const [showSallePicker, setShowSallePicker] = useState(false);
   const [typeSeance, setTypeSeance] = useState<TypeSeance>('CM');
   const [titreChapitre, setTitreChapitre] = useState('');
   const [contenuAborde, setContenuAborde] = useState('');
   const [showUePicker, setShowUePicker] = useState(false);
   const [showEnseignantPicker, setShowEnseignantPicker] = useState(false);
+
+  // Date/Time picker states
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showDebutPicker, setShowDebutPicker] = useState(false);
+  const [showFinPicker, setShowFinPicker] = useState(false);
 
   // Form errors
   const [errors, setErrors] = useState({
@@ -93,7 +102,7 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
       setDateCours(fiche.date_cours || '');
       setHeureDebut(fiche.heure_debut || '');
       setHeureFin(fiche.heure_fin || '');
-      setSalle(fiche.salle || '');
+      setSelectedSalle(fiche.salle || null);
       setTypeSeance((fiche.type_seance as TypeSeance) || 'CM');
       setTitreChapitre(fiche.titre_chapitre || '');
       setContenuAborde(fiche.contenu_aborde || '');
@@ -107,8 +116,14 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const loadUes = async () => {
     try {
-      const response = await unitesEnseignementService.getAll();
-      setUes(response.data);
+      const [ueResponse, sallesResponse] = await Promise.all([
+        unitesEnseignementService.getAll(),
+        sallesService.getAll(),
+      ]);
+      const data = Array.isArray(ueResponse.data) ? ueResponse.data : ueResponse.data?.results || [];
+      setUes(data);
+      const sallesData = Array.isArray(sallesResponse.data) ? sallesResponse.data : sallesResponse.data?.results || [];
+      setSallesList(sallesData.filter((s: any) => s.est_active));
     } catch (err) {
       console.error('Error loading UEs:', err);
       showError('Impossible de charger les UEs', 'Erreur');
@@ -132,6 +147,13 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
     const enseignants = getSelectedUeEnseignants();
     const ens = enseignants.find((e) => e.id === selectedEnseignant);
     return ens ? ens.nom_complet : 'Selectionner un enseignant';
+  };
+
+  const getSelectedSalleLabel = () => {
+    if (!selectedSalle) return 'Selectionner une salle (optionnel)';
+    const salle = sallesList.find((s) => s.id === selectedSalle);
+    if (!salle) return 'Selectionner une salle (optionnel)';
+    return salle.batiment ? `${salle.nom_salle} (${salle.batiment})` : salle.nom_salle;
   };
 
   const validateForm = () => {
@@ -201,18 +223,39 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
     return isValid;
   };
 
+  const checkConflicts = async (): Promise<any[]> => {
+    if (!dateCours || !heureDebut || !heureFin) return [];
+    try {
+      const res = await fichesSuiviService.checkConflicts({
+        salle: selectedSalle || null,
+        enseignant: selectedEnseignant || null,
+        date_cours: dateCours,
+        heure_debut: heureDebut,
+        heure_fin: heureFin,
+        exclude_fiche_id: isEditMode && ficheId ? ficheId : undefined,
+      });
+      return res.data.conflicts || [];
+    } catch {
+      return [];
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
     setLoading(true);
     try {
+      // Check conflicts before submitting
+      const detectedConflicts = await checkConflicts();
+      setConflicts(detectedConflicts);
+
       const payload = {
         ue: selectedUe!,
         enseignant: selectedEnseignant!,
         date_cours: dateCours,
         heure_debut: heureDebut,
         heure_fin: heureFin,
-        salle,
+        salle: selectedSalle || null,
         type_seance: typeSeance,
         titre_chapitre: titreChapitre,
         contenu_aborde: contenuAborde,
@@ -227,10 +270,52 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
       }
       setShowSuccessDialog(true);
     } catch (err: any) {
-      showError(
-        err.response?.data?.message || err.response?.data?.detail || (isEditMode ? 'Erreur lors de la modification' : 'Erreur lors de la creation'),
-        'Echec'
-      );
+      const data = err.response?.data;
+      if (data && typeof data === 'object') {
+        // Map backend snake_case field names to camelCase state keys
+        const fieldMap: Record<string, string> = {
+          date_cours: 'dateCours',
+          heure_debut: 'heureDebut',
+          heure_fin: 'heureFin',
+          titre_chapitre: 'titreChapitre',
+          contenu_aborde: 'contenuAborde',
+          ue: 'ue',
+          enseignant: 'enseignant',
+        };
+
+        const fieldErrors: Record<string, string> = {};
+        const nonFieldMessages: string[] = [];
+
+        for (const [key, value] of Object.entries(data)) {
+          const msg = Array.isArray(value) ? value[0] : String(value);
+
+          if (key === 'detail') {
+            nonFieldMessages.push(msg);
+          } else if (key === 'non_field_errors') {
+            const msgs = Array.isArray(value) ? value : [value];
+            nonFieldMessages.push(...msgs.map(String));
+          } else if (fieldMap[key]) {
+            fieldErrors[fieldMap[key]] = msg;
+          } else {
+            nonFieldMessages.push(msg);
+          }
+        }
+
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors((prev) => ({ ...prev, ...fieldErrors }));
+          showError('Veuillez corriger les erreurs dans le formulaire', 'Echec');
+        }
+
+        if (nonFieldMessages.length > 0) {
+          showError(nonFieldMessages.join('\n'), 'Echec');
+        }
+
+        if (Object.keys(fieldErrors).length === 0 && nonFieldMessages.length === 0) {
+          showError(isEditMode ? 'Erreur lors de la modification' : 'Erreur lors de la creation', 'Echec');
+        }
+      } else {
+        showError(isEditMode ? 'Erreur lors de la modification' : 'Erreur lors de la creation', 'Echec');
+      }
     } finally {
       setLoading(false);
     }
@@ -246,6 +331,61 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
     { value: 'TD', label: 'Travaux Diriges', icon: 'pencil' },
     { value: 'TP', label: 'Travaux Pratiques', icon: 'flask' },
   ];
+
+  // Date/Time picker limits
+  const today = new Date();
+  const minDate = new Date(today);
+  minDate.setDate(today.getDate() - 30);
+  const maxDate = new Date(today);
+  maxDate.setDate(today.getDate() + 7);
+
+  const parseDate = (dateStr: string): Date => {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    }
+    return new Date();
+  };
+
+  const parseTime = (timeStr: string): Date => {
+    const d = new Date();
+    const parts = timeStr.split(':');
+    if (parts.length === 2) {
+      d.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+    }
+    return d;
+  };
+
+  const handleDateChange = (_event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      const y = selectedDate.getFullYear();
+      const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const d = String(selectedDate.getDate()).padStart(2, '0');
+      setDateCours(`${y}-${m}-${d}`);
+      setErrors((prev) => ({ ...prev, dateCours: '' }));
+    }
+  };
+
+  const handleDebutChange = (_event: any, selectedTime?: Date) => {
+    setShowDebutPicker(Platform.OS === 'ios');
+    if (selectedTime) {
+      const h = String(selectedTime.getHours()).padStart(2, '0');
+      const m = String(selectedTime.getMinutes()).padStart(2, '0');
+      setHeureDebut(`${h}:${m}`);
+      setErrors((prev) => ({ ...prev, heureDebut: '' }));
+    }
+  };
+
+  const handleFinChange = (_event: any, selectedTime?: Date) => {
+    setShowFinPicker(Platform.OS === 'ios');
+    if (selectedTime) {
+      const h = String(selectedTime.getHours()).padStart(2, '0');
+      const m = String(selectedTime.getMinutes()).padStart(2, '0');
+      setHeureFin(`${h}:${m}`);
+      setErrors((prev) => ({ ...prev, heureFin: '' }));
+    }
+  };
 
   if (loadingFiche) {
     return (
@@ -327,31 +467,43 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
             {showUePicker && (
               <Card style={styles.ueList}>
                 <CardContent>
-                  {ues.map((ue) => (
-                    <TouchableOpacity
-                      key={ue.id}
-                      style={[
-                        styles.ueItem,
-                        selectedUe === ue.id && styles.ueItemSelected,
-                      ]}
-                      onPress={() => {
-                        setSelectedUe(ue.id);
-                        // Auto-select si un seul enseignant
-                        const enseignants = ue.enseignants_details || [];
-                        setSelectedEnseignant(enseignants.length === 1 ? enseignants[0].id : null);
-                        setShowUePicker(false);
-                        setErrors({ ...errors, ue: '', enseignant: '' });
-                      }}>
-                      <Text
-                        variant="body"
-                        color={selectedUe === ue.id ? 'primary' : 'primary'}>
-                        {ue.code_ue} - {ue.libelle_ue}
+                  {ues.length === 0 ? (
+                    <View style={{ padding: Spacing.md, alignItems: 'center' }}>
+                      <Icon name="alert-circle-outline" size={32} color={Colors.text.tertiary} />
+                      <Text variant="body" color="tertiary" style={{ marginTop: Spacing.sm, textAlign: 'center' }}>
+                        Aucune UE disponible pour votre niveau
                       </Text>
-                      {selectedUe === ue.id && (
-                        <Icon name="check" size={20} color={Colors.primary} />
-                      )}
-                    </TouchableOpacity>
-                  ))}
+                      <Text variant="caption" color="tertiary" style={{ marginTop: Spacing.xs, textAlign: 'center' }}>
+                        Contactez votre chef de departement
+                      </Text>
+                    </View>
+                  ) : (
+                    ues.map((ue) => (
+                      <TouchableOpacity
+                        key={ue.id}
+                        style={[
+                          styles.ueItem,
+                          selectedUe === ue.id && styles.ueItemSelected,
+                        ]}
+                        onPress={() => {
+                          setSelectedUe(ue.id);
+                          // Auto-select si un seul enseignant
+                          const enseignants = ue.enseignants_details || [];
+                          setSelectedEnseignant(enseignants.length === 1 ? enseignants[0].id : null);
+                          setShowUePicker(false);
+                          setErrors({ ...errors, ue: '', enseignant: '' });
+                        }}>
+                        <Text
+                          variant="body"
+                          color={selectedUe === ue.id ? 'primary' : 'primary'}>
+                          {ue.code_ue} - {ue.libelle_ue}
+                        </Text>
+                        {selectedUe === ue.id && (
+                          <Icon name="check" size={20} color={Colors.primary} />
+                        )}
+                      </TouchableOpacity>
+                    ))
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -428,54 +580,149 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
               </>
             )}
 
-            <Input
-              label="Date du cours *"
-              placeholder="2025-01-15"
-              value={dateCours}
-              onChangeText={(text) => {
-                setDateCours(text);
-                setErrors({ ...errors, dateCours: '' });
-              }}
-              leftIcon="calendar"
-              error={errors.dateCours}
-            />
+            {/* Date picker */}
+            <Text variant="label" style={styles.label}>
+              Date du cours *
+            </Text>
+            <TouchableOpacity
+              style={[styles.pickerButton, errors.dateCours ? styles.pickerButtonError : null]}
+              activeOpacity={0.7}
+              onPress={() => setShowDatePicker(true)}>
+              <Icon name="calendar" size={20} color={Colors.gray[400]} style={{ marginRight: Spacing.sm }} />
+              <Text variant="body" color={dateCours ? 'primary' : 'tertiary'} style={{ flex: 1 }}>
+                {dateCours || 'Selectionner une date'}
+              </Text>
+            </TouchableOpacity>
+            {errors.dateCours ? (
+              <Text variant="caption" style={styles.errorText}>{errors.dateCours}</Text>
+            ) : null}
+            {showDatePicker && (
+              <DateTimePicker
+                value={parseDate(dateCours)}
+                mode="date"
+                display="default"
+                minimumDate={minDate}
+                maximumDate={maxDate}
+                onChange={handleDateChange}
+              />
+            )}
 
+            <Spacer size="sm" />
+
+            {/* Heure debut / fin pickers */}
             <View style={styles.row}>
               <View style={styles.halfInput}>
-                <Input
-                  label="Heure debut *"
-                  placeholder="08:00"
-                  value={heureDebut}
-                  onChangeText={(text) => {
-                    setHeureDebut(text);
-                    setErrors({ ...errors, heureDebut: '' });
-                  }}
-                  leftIcon="clock-outline"
-                  error={errors.heureDebut}
-                />
+                <Text variant="label" style={styles.label}>
+                  Heure debut *
+                </Text>
+                <TouchableOpacity
+                  style={[styles.pickerButton, errors.heureDebut ? styles.pickerButtonError : null]}
+                  activeOpacity={0.7}
+                  onPress={() => setShowDebutPicker(true)}>
+                  <Icon name="clock-outline" size={20} color={Colors.gray[400]} style={{ marginRight: Spacing.sm }} />
+                  <Text variant="body" color={heureDebut ? 'primary' : 'tertiary'} style={{ flex: 1 }}>
+                    {heureDebut || 'HH:MM'}
+                  </Text>
+                </TouchableOpacity>
+                {errors.heureDebut ? (
+                  <Text variant="caption" style={styles.errorText}>{errors.heureDebut}</Text>
+                ) : null}
+                {showDebutPicker && (
+                  <DateTimePicker
+                    value={heureDebut ? parseTime(heureDebut) : new Date()}
+                    mode="time"
+                    is24Hour={true}
+                    display="default"
+                    onChange={handleDebutChange}
+                  />
+                )}
               </View>
               <View style={styles.halfInput}>
-                <Input
-                  label="Heure fin *"
-                  placeholder="10:00"
-                  value={heureFin}
-                  onChangeText={(text) => {
-                    setHeureFin(text);
-                    setErrors({ ...errors, heureFin: '' });
-                  }}
-                  leftIcon="clock-outline"
-                  error={errors.heureFin}
-                />
+                <Text variant="label" style={styles.label}>
+                  Heure fin *
+                </Text>
+                <TouchableOpacity
+                  style={[styles.pickerButton, errors.heureFin ? styles.pickerButtonError : null]}
+                  activeOpacity={0.7}
+                  onPress={() => setShowFinPicker(true)}>
+                  <Icon name="clock-outline" size={20} color={Colors.gray[400]} style={{ marginRight: Spacing.sm }} />
+                  <Text variant="body" color={heureFin ? 'primary' : 'tertiary'} style={{ flex: 1 }}>
+                    {heureFin || 'HH:MM'}
+                  </Text>
+                </TouchableOpacity>
+                {errors.heureFin ? (
+                  <Text variant="caption" style={styles.errorText}>{errors.heureFin}</Text>
+                ) : null}
+                {showFinPicker && (
+                  <DateTimePicker
+                    value={heureFin ? parseTime(heureFin) : new Date()}
+                    mode="time"
+                    is24Hour={true}
+                    display="default"
+                    onChange={handleFinChange}
+                  />
+                )}
               </View>
             </View>
 
-            <Input
-              label="Salle"
-              placeholder="Amphi A, Salle 101..."
-              value={salle}
-              onChangeText={setSalle}
-              leftIcon="door"
-            />
+            {/* Salle Picker */}
+            <Text variant="label" style={styles.label}>
+              Salle
+            </Text>
+            <TouchableOpacity
+              style={styles.uePicker}
+              activeOpacity={0.7}
+              onPress={() => setShowSallePicker(!showSallePicker)}>
+              <Text
+                variant="body"
+                color={selectedSalle ? 'primary' : 'tertiary'}
+                style={styles.uePickerText}>
+                {getSelectedSalleLabel()}
+              </Text>
+              <Icon
+                name={showSallePicker ? 'chevron-up' : 'chevron-down'}
+                size={24}
+                color={Colors.text.secondary}
+              />
+            </TouchableOpacity>
+
+            {showSallePicker && (
+              <Card style={styles.ueList}>
+                <CardContent>
+                  {/* Option to clear selection */}
+                  <TouchableOpacity
+                    style={[styles.ueItem, !selectedSalle && styles.ueItemSelected]}
+                    onPress={() => {
+                      setSelectedSalle(null);
+                      setShowSallePicker(false);
+                    }}>
+                    <Text variant="body" color="tertiary">Aucune salle</Text>
+                    {!selectedSalle && <Icon name="check" size={20} color={Colors.primary} />}
+                  </TouchableOpacity>
+                  {sallesList.map((s) => (
+                    <TouchableOpacity
+                      key={s.id}
+                      style={[
+                        styles.ueItem,
+                        selectedSalle === s.id && styles.ueItemSelected,
+                      ]}
+                      onPress={() => {
+                        setSelectedSalle(s.id);
+                        setShowSallePicker(false);
+                      }}>
+                      <Text variant="body" color={selectedSalle === s.id ? 'primary' : 'primary'}>
+                        {s.nom_salle}{s.batiment ? ` (${s.batiment})` : ''}
+                      </Text>
+                      {selectedSalle === s.id && (
+                        <Icon name="check" size={20} color={Colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            <Spacer size={12} />
 
             {/* Type de seance */}
             <Text variant="label" style={styles.label}>
@@ -538,6 +785,26 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
             />
           </Section>
 
+          {/* Conflicts warning */}
+          {conflicts.length > 0 && (
+            <Card style={styles.conflictCard}>
+              <CardContent>
+                <View style={styles.conflictHeader}>
+                  <Icon name="alert" size={20} color={Colors.status.warning} />
+                  <Text variant="subtitle" style={styles.conflictTitle}>Conflits detectes</Text>
+                </View>
+                {conflicts.map((c: any, i: number) => (
+                  <Text key={i} variant="caption" style={styles.conflictMessage}>
+                    {c.type === 'salle' ? '🏫 ' : '👨‍🏫 '}{c.message}
+                  </Text>
+                ))}
+                <Text variant="caption" color="tertiary" style={{ marginTop: Spacing.sm }}>
+                  Ces conflits sont informatifs. Vous pouvez quand meme soumettre la fiche.
+                </Text>
+              </CardContent>
+            </Card>
+          )}
+
           <Spacer size="lg" />
 
           <Button
@@ -553,15 +820,15 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
       </View>
 
       {/* Success Dialog */}
-      <ConfirmDialog
+      <AlertDialog
         visible={showSuccessDialog}
+        onDismiss={handleSuccessConfirm}
         title="Succes"
         message={isEditMode
-          ? "Votre fiche a ete modifiee et resoumise pour validation."
-          : "Votre fiche de suivi a ete creee avec succes et soumise pour validation."}
+          ? "Votre fiche a ete modifiee et resoumise. Elle est en attente de validation par l'enseignant."
+          : "Votre fiche de suivi a ete creee avec succes. Elle est en attente de validation par l'enseignant."}
         confirmText="OK"
         onConfirm={handleSuccessConfirm}
-        onCancel={handleSuccessConfirm}
         type="success"
       />
     </ScreenContainer>
@@ -639,6 +906,18 @@ const styles = StyleSheet.create({
     color: Colors.status.error,
     marginTop: Spacing.xs,
   },
+  pickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    backgroundColor: Colors.background.secondary,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+  },
+  pickerButtonError: {
+    borderColor: Colors.status.error,
+  },
   // Row layout
   row: {
     flexDirection: 'row',
@@ -673,6 +952,25 @@ const styles = StyleSheet.create({
   },
   seanceTypeLabelSelected: {
     color: Colors.light,
+  },
+  conflictCard: {
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.status.warning,
+    marginTop: Spacing.md,
+  },
+  conflictHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  conflictTitle: {
+    color: Colors.status.warning,
+    fontWeight: '700',
+  },
+  conflictMessage: {
+    color: Colors.text.secondary,
+    marginBottom: Spacing.xs,
   },
 });
 

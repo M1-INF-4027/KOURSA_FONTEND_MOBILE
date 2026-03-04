@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "248579793606",
+    "project_id": "koursa-project",
+    "storage_bucket": "koursa-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:248579793606:android:c0e284d26454b3ec41adc7",
+        "android_client_info": {
+          "package_name": "com.koursa"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "248579793606-0k33616oncb75k24v04824suptcheov5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuWUj7bgJ0icsSpgJsj3kWkYJDHKd_J-c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "248579793606-0k33616oncb75k24v04824suptcheov5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,6 +1,7 @@
 /**
  * Koursa - Users Screen
  * Ecran de liste des utilisateurs
+ * Vue groupee pour les delegues (Chef, Enseignants, Delegues)
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -10,6 +11,7 @@ import {
   FlatList,
   RefreshControl,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -22,18 +24,255 @@ import {
   Input,
   Icon,
   Spacer,
+  Section,
 } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { usersService, rolesService } from '../../api/services';
+import { useAuth } from '../../contexts/AuthContext';
 import { Utilisateur, Role, StatutCompte } from '../../types';
 import { Colors } from '../../constants/colors';
 import { Spacing, BorderRadius } from '../../constants/spacing';
+
+// Types pour la reponse mes-utilisateurs
+interface MesUtilisateursUE {
+  id: number;
+  code_ue: string;
+  libelle_ue: string;
+}
+
+interface MesUtilisateursEnseignant {
+  id: number;
+  nom_complet: string;
+  email: string;
+  ues: MesUtilisateursUE[];
+}
+
+interface MesUtilisateursPersonne {
+  id: number;
+  nom_complet: string;
+  email: string;
+}
+
+interface MesUtilisateursResponse {
+  classe: string;
+  chef: MesUtilisateursPersonne | null;
+  enseignants: MesUtilisateursEnseignant[];
+  delegues: MesUtilisateursPersonne[];
+}
 
 interface Props {
   navigation: any;
 }
 
 const UsersScreen: React.FC<Props> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+  const { showError } = useToast();
+  const { user: currentUser } = useAuth();
+
+  const isDelegue = currentUser?.roles?.some(
+    (r) => r.nom_role === 'Délégué' || r.nom_role === 'Delegue'
+  ) ?? false;
+
+  if (isDelegue) {
+    return <DelegueUsersView navigation={navigation} />;
+  }
+
+  return <DefaultUsersView navigation={navigation} />;
+};
+
+// ============================================================
+// Vue DELEGUE: affichage groupe Chef / Enseignants / Delegues
+// ============================================================
+
+const DelegueUsersView: React.FC<Props> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+  const { showError } = useToast();
+
+  const [data, setData] = useState<MesUtilisateursResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [expandedEnseignant, setExpandedEnseignant] = useState<number | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await usersService.getMesUtilisateurs();
+      setData(res.data as MesUtilisateursResponse);
+    } catch (error) {
+      console.error('Error loading mes-utilisateurs:', error);
+      showError('Impossible de charger les utilisateurs', 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }, [showError]);
+
+  const toggleEnseignant = (id: number) => {
+    setExpandedEnseignant((prev) => (prev === id ? null : id));
+  };
+
+  const getInitials = (nomComplet: string) => {
+    const parts = nomComplet.trim().split(/\s+/);
+    const first = parts[0]?.[0] || '';
+    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+    return `${first}${last}`.toUpperCase();
+  };
+
+  const renderPersonCard = (
+    person: MesUtilisateursPersonne,
+    color: string,
+  ) => (
+    <Card key={person.id} style={styles.userCard}>
+      <CardContent>
+        <View style={styles.userRow}>
+          <Avatar initials={getInitials(person.nom_complet)} size="lg" color={color} />
+          <View style={styles.userInfo}>
+            <Text variant="subtitle" numberOfLines={1}>
+              {person.nom_complet}
+            </Text>
+            <Text variant="caption" color="tertiary" numberOfLines={1}>
+              {person.email}
+            </Text>
+          </View>
+        </View>
+      </CardContent>
+    </Card>
+  );
+
+  const renderEnseignantCard = (enseignant: MesUtilisateursEnseignant) => {
+    const isExpanded = expandedEnseignant === enseignant.id;
+    return (
+      <Card key={enseignant.id} style={styles.userCard} onPress={() => toggleEnseignant(enseignant.id)}>
+        <CardContent>
+          <View style={styles.userRow}>
+            <Avatar
+              initials={getInitials(enseignant.nom_complet)}
+              size="lg"
+              color={Colors.primary}
+            />
+            <View style={styles.userInfo}>
+              <View style={styles.enseignantHeader}>
+                <Text variant="subtitle" style={{ flex: 1 }} numberOfLines={1}>
+                  {enseignant.nom_complet}
+                </Text>
+                <Icon
+                  name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color={Colors.gray[400]}
+                />
+              </View>
+              <Text variant="caption" color="tertiary" numberOfLines={1}>
+                {enseignant.email}
+              </Text>
+              <Text variant="caption" color="secondary" style={styles.ueCount}>
+                {enseignant.ues.length} UE{enseignant.ues.length > 1 ? 's' : ''}
+              </Text>
+            </View>
+          </View>
+          {isExpanded && enseignant.ues.length > 0 && (
+            <View style={styles.uesContainer}>
+              {enseignant.ues.map((ue) => (
+                <Chip
+                  key={ue.id}
+                  label={`${ue.code_ue} - ${ue.libelle_ue}`}
+                  color="primary"
+                  size="small"
+                  style={styles.ueChip}
+                />
+              ))}
+            </View>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <ScreenContainer
+      backgroundColor={Colors.primary}
+      statusBarStyle="light-content"
+      edges={[]}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+        <Text variant="h5" style={styles.headerTitle}>
+          Utilisateurs
+        </Text>
+        {data && (
+          <Text variant="caption" style={styles.headerSubtitle}>
+            {data.classe}
+          </Text>
+        )}
+      </View>
+
+      {/* Contenu */}
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={loadData}
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
+          />
+        }>
+        {data ? (
+          <>
+            {/* Chef de departement */}
+            <Section title="Chef de departement">
+              {data.chef ? (
+                renderPersonCard(data.chef, Colors.accent)
+              ) : (
+                <Text variant="caption" color="tertiary" style={styles.emptySection}>
+                  Aucun chef assigne
+                </Text>
+              )}
+            </Section>
+
+            {/* Enseignants */}
+            <Section title="Enseignants">
+              {data.enseignants.length > 0 ? (
+                data.enseignants.map(renderEnseignantCard)
+              ) : (
+                <Text variant="caption" color="tertiary" style={styles.emptySection}>
+                  Aucun enseignant trouve
+                </Text>
+              )}
+            </Section>
+
+            {/* Co-delegues */}
+            <Section title="Co-delegues">
+              {data.delegues.length > 0 ? (
+                data.delegues.map((d) => renderPersonCard(d, Colors.secondary))
+              ) : (
+                <Text variant="caption" color="tertiary" style={styles.emptySection}>
+                  Aucun autre delegue
+                </Text>
+              )}
+            </Section>
+
+            <Spacer size="3xl" />
+          </>
+        ) : !loading ? (
+          <View style={styles.emptyContainer}>
+            <Icon name="account-group" size={64} color={Colors.gray[300]} />
+            <Text variant="body" color="secondary" style={styles.emptyText}>
+              Aucune donnee disponible
+            </Text>
+          </View>
+        ) : null}
+      </ScrollView>
+    </ScreenContainer>
+  );
+};
+
+// ============================================================
+// Vue par defaut (non-delegue): comportement existant inchange
+// ============================================================
+
+const DefaultUsersView: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { showError } = useToast();
 
@@ -288,6 +527,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: Spacing.md,
   },
+  headerSubtitle: {
+    color: Colors.light,
+    textAlign: 'center',
+    opacity: 0.8,
+  },
   searchContainer: {
     marginTop: Spacing.sm,
   },
@@ -301,6 +545,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.primary,
     borderTopLeftRadius: BorderRadius['2xl'],
     borderTopRightRadius: BorderRadius['2xl'],
+  },
+  scrollContent: {
+    padding: Spacing.base,
+    paddingTop: Spacing.lg,
   },
   // Filters
   filtersContainer: {
@@ -345,6 +593,27 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     marginTop: Spacing.sm,
   },
+  // Enseignant
+  enseignantHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  ueCount: {
+    marginTop: Spacing.xs,
+  },
+  uesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.light,
+  },
+  ueChip: {
+    marginBottom: Spacing.xs,
+  },
   // Empty
   emptyContainer: {
     alignItems: 'center',
@@ -355,6 +624,10 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     marginTop: Spacing.xs,
+  },
+  emptySection: {
+    paddingVertical: Spacing.md,
+    textAlign: 'center',
   },
 });
 
