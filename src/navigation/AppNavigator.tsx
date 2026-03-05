@@ -35,9 +35,11 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 
 // Types de navigation
+import { GooglePrefillData } from '../types';
+
 export type AuthStackParamList = {
   Login: undefined;
-  Register: undefined;
+  Register: { googleData?: GooglePrefillData } | undefined;
 };
 
 export type MainTabParamList = {

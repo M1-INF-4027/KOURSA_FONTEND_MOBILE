@@ -12,6 +12,9 @@ export { Text, LogoText } from './Text';
 // Button
 export { Button, IconButton } from './Button';
 
+// Google Sign-In Button
+export { GoogleSignInButton } from './GoogleSignInButton';
+
 // Input
 export { Input, PasswordInput, TextArea } from './Input';
 

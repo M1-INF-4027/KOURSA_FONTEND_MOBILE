@@ -130,6 +130,13 @@ export interface NotificationItem {
   created_at: string;
 }
 
+export interface GooglePrefillData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  idToken: string;
+}
+
 export interface AuthState {
   user: Utilisateur | null;
   token: string | null;

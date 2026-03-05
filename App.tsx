@@ -16,11 +16,15 @@ import { NotificationProvider } from './src/contexts/NotificationContext';
 import { ToastProvider } from './src/components/ui/Toast';
 import AppNavigator from './src/navigation/AppNavigator';
 import { Colors } from './src/constants/colors';
+import { configureGoogleSignIn } from './src/api/googleAuth';
 
 // Ignorer certains warnings en dev
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
 ]);
+
+// Configurer Google Sign-In au demarrage
+configureGoogleSignIn();
 
 function App() {
   const colorScheme = useColorScheme();

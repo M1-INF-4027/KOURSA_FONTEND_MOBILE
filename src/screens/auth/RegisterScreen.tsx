@@ -32,6 +32,7 @@ import {
   Button,
   Spacer,
   Icon,
+  GoogleSignInButton,
 } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/ui/Toast';
@@ -40,7 +41,7 @@ import {
   filieresService,
   niveauxService,
 } from '../../api/services';
-import { Filiere, Niveau } from '../../types';
+import { Filiere, Niveau, GooglePrefillData } from '../../types';
 import { Colors } from '../../constants/colors';
 import { Spacing, BorderRadius, Shadows } from '../../constants/spacing';
 
@@ -49,6 +50,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Props {
   navigation: any;
+  route: any;
 }
 
 // ─── Selection Card Component ────────────────────────────────────────────────
@@ -289,20 +291,26 @@ const stepStyles = StyleSheet.create({
 });
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-const RegisterScreen: React.FC<Props> = ({ navigation }) => {
+const RegisterScreen: React.FC<Props> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { register } = useAuth();
+  const { register, googleSignIn, googleCompleteRegistration } = useAuth();
   const { showError, showSuccess } = useToast();
   const scrollRef = useRef<ScrollView>(null);
+
+  // Google mode
+  const googleDataFromParams = route.params?.googleData as GooglePrefillData | undefined;
+  const [isGoogleMode, setIsGoogleMode] = useState(!!googleDataFromParams);
+  const [googleIdToken, setGoogleIdToken] = useState(googleDataFromParams?.idToken || '');
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Step state
   const [currentStep, setCurrentStep] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   // Step 1: Personal info
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState(googleDataFromParams?.firstName || '');
+  const [lastName, setLastName] = useState(googleDataFromParams?.lastName || '');
+  const [email, setEmail] = useState(googleDataFromParams?.email || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({
@@ -436,16 +444,20 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       newErrors.email = 'Email invalide';
       isValid = false;
     }
-    if (!password) {
-      newErrors.password = 'Le mot de passe est requis';
-      isValid = false;
-    } else if (password.length < 8) {
-      newErrors.password = 'Minimum 8 caracteres';
-      isValid = false;
-    }
-    if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
-      isValid = false;
+
+    // Skip password validation en mode Google
+    if (!isGoogleMode) {
+      if (!password) {
+        newErrors.password = 'Le mot de passe est requis';
+        isValid = false;
+      } else if (password.length < 8) {
+        newErrors.password = 'Minimum 8 caracteres';
+        isValid = false;
+      }
+      if (password !== confirmPassword) {
+        newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
+        isValid = false;
+      }
     }
 
     setErrors(newErrors);
@@ -512,6 +524,33 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     setSelectedNiveau(id === selectedNiveau ? null : id);
   };
 
+  // ─── Google Sign-In depuis l'ecran d'inscription ─────────────────────────
+  const handleGoogleRegister = async () => {
+    setGoogleLoading(true);
+    try {
+      const result = await googleSignIn();
+      if (result.type === 'authenticated') {
+        // Utilisateur existant -> auto-login, navigation automatique
+        return;
+      }
+      // Utilisateur n'existe pas -> passer en mode Google avec pre-remplissage
+      setIsGoogleMode(true);
+      setGoogleIdToken(result.data.idToken);
+      setFirstName(result.data.firstName);
+      setLastName(result.data.lastName);
+      setEmail(result.data.email);
+      // Avancer directement a l'etape 2
+      animateTransition(() => {
+        setCurrentStep(1);
+        loadAcademicData();
+      });
+    } catch (err: any) {
+      showError(err.message || 'Erreur Google Sign-In', 'Echec');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   // ─── Submit ──────────────────────────────────────────────────────────────
   const handleRegister = async () => {
     if (!validateStep2()) return;
@@ -526,14 +565,22 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
     setLoading(true);
     try {
-      await register({
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        email: email.trim(),
-        password,
-        roles_ids: [delegueRoleId],
-        niveau_represente: selectedNiveau,
-      });
+      if (isGoogleMode) {
+        await googleCompleteRegistration(
+          googleIdToken,
+          [delegueRoleId],
+          selectedNiveau,
+        );
+      } else {
+        await register({
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          email: email.trim(),
+          password,
+          roles_ids: [delegueRoleId],
+          niveau_represente: selectedNiveau,
+        });
+      }
       showSuccess('Votre demande d\'inscription a ete envoyee !', 'Bienvenue');
     } catch (err: any) {
       showError(
@@ -560,7 +607,9 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         Informations personnelles
       </Text>
       <Text variant="bodySmall" color="secondary" style={styles.stepSubtitle}>
-        Renseignez vos informations pour creer votre compte delegue
+        {isGoogleMode
+          ? 'Verifiez vos informations recuperees depuis Google'
+          : 'Renseignez vos informations pour creer votre compte delegue'}
       </Text>
 
       <Spacer size="lg" />
@@ -602,23 +651,27 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         error={errors.email}
       />
 
-      <PasswordInput
-        label="Mot de passe"
-        placeholder="Minimum 8 caracteres"
-        value={password}
-        onChangeText={setPassword}
-        leftIcon="lock-outline"
-        error={errors.password}
-      />
+      {!isGoogleMode && (
+        <>
+          <PasswordInput
+            label="Mot de passe"
+            placeholder="Minimum 8 caracteres"
+            value={password}
+            onChangeText={setPassword}
+            leftIcon="lock-outline"
+            error={errors.password}
+          />
 
-      <PasswordInput
-        label="Confirmer le mot de passe"
-        placeholder="Repetez le mot de passe"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        leftIcon="lock-check-outline"
-        error={errors.confirmPassword}
-      />
+          <PasswordInput
+            label="Confirmer le mot de passe"
+            placeholder="Repetez le mot de passe"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            leftIcon="lock-check-outline"
+            error={errors.confirmPassword}
+          />
+        </>
+      )}
     </>
   );
 
@@ -863,16 +916,26 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                     iconPosition="right"
                     style={styles.primaryButton}
                   />
-                  <View style={styles.divider}>
-                    <View style={styles.dividerLine} />
-                    <Text
-                      variant="caption"
-                      color="tertiary"
-                      style={styles.dividerText}>
-                      ou
-                    </Text>
-                    <View style={styles.dividerLine} />
-                  </View>
+                  {!isGoogleMode && (
+                    <>
+                      <View style={styles.divider}>
+                        <View style={styles.dividerLine} />
+                        <Text
+                          variant="caption"
+                          color="tertiary"
+                          style={styles.dividerText}>
+                          ou
+                        </Text>
+                        <View style={styles.dividerLine} />
+                      </View>
+                      <GoogleSignInButton
+                        onPress={handleGoogleRegister}
+                        loading={googleLoading}
+                        title="S'inscrire avec Google"
+                        style={styles.googleButton}
+                      />
+                    </>
+                  )}
                   <Button
                     title="Deja un compte ? Se connecter"
                     onPress={() => navigation.navigate('Login')}
@@ -1041,6 +1104,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   secondaryButton: {
+    marginBottom: Spacing.md,
+  },
+  googleButton: {
     marginBottom: Spacing.md,
   },
   // Divider

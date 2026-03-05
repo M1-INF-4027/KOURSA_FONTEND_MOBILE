@@ -1,11 +1,18 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Utilisateur, AuthState, LoginCredentials, RegisterData } from '../types';
+import { Utilisateur, AuthState, LoginCredentials, RegisterData, GooglePrefillData } from '../types';
 import { authService, usersService } from '../api/services';
+import { signInWithGoogle, googleLogin, googleRegister, googleSignOut } from '../api/googleAuth';
+
+type GoogleSignInResult =
+  | { type: 'authenticated' }
+  | { type: 'needs_registration'; data: GooglePrefillData };
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
+  googleSignIn: () => Promise<GoogleSignInResult>;
+  googleCompleteRegistration: (idToken: string, rolesIds: number[], niveauRepresente: number | null) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: Utilisateur) => void;
   refreshUser: () => Promise<void>;
@@ -127,8 +134,95 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const handleGoogleSignIn = async (): Promise<GoogleSignInResult> => {
+    // Lancer le flow natif Google
+    let googleData;
+    try {
+      googleData = await signInWithGoogle();
+    } catch (error: any) {
+      if (error.code === 'SIGN_IN_CANCELLED') {
+        throw new Error('Connexion Google annulee');
+      }
+      throw new Error(error.message || 'Erreur lors de la connexion Google');
+    }
+
+    try {
+      // Envoyer le token au backend
+      const response = await googleLogin(googleData.idToken);
+      const { access, refresh, user } = response.data as { access: string; refresh: string; user: Utilisateur };
+
+      await AsyncStorage.setItem('authToken', access);
+      await AsyncStorage.setItem('refreshToken', refresh);
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+
+      setState({
+        user,
+        token: access,
+        refreshToken: refresh,
+        isLoading: false,
+        isAuthenticated: true,
+      });
+
+      return { type: 'authenticated' };
+    } catch (error: any) {
+      if (error.response?.status === 404 && error.response?.data?.status === 'user_not_found') {
+        const { email, first_name, last_name } = error.response.data;
+        return {
+          type: 'needs_registration',
+          data: {
+            email,
+            firstName: first_name,
+            lastName: last_name,
+            idToken: googleData.idToken,
+          },
+        };
+      }
+
+      throw new Error(error.response?.data?.detail || 'Erreur lors de la connexion Google');
+    }
+  };
+
+  const googleCompleteRegistration = async (
+    idToken: string,
+    rolesIds: number[],
+    niveauRepresente: number | null,
+  ) => {
+    try {
+      const response = await googleRegister(idToken, rolesIds, niveauRepresente);
+      const { access, refresh, user } = response.data;
+
+      await AsyncStorage.setItem('authToken', access);
+      await AsyncStorage.setItem('refreshToken', refresh);
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+
+      setState({
+        user,
+        token: access,
+        refreshToken: refresh,
+        isLoading: false,
+        isAuthenticated: true,
+      });
+    } catch (error: any) {
+      if (error.response?.data) {
+        const errors = error.response.data;
+        if (typeof errors === 'object' && errors.detail) {
+          throw new Error(errors.detail);
+        }
+        const messages = Object.entries(errors)
+          .map(([field, msgs]) => {
+            const msgList = Array.isArray(msgs) ? msgs : [msgs];
+            return `${field}: ${msgList.join(', ')}`;
+          })
+          .join('\n');
+        throw new Error(messages || "Erreur lors de l'inscription Google");
+      }
+      throw new Error("Erreur lors de l'inscription Google");
+    }
+  };
+
   const logout = async () => {
     try {
+      await googleSignOut();
       await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'user']);
 
       setState({
@@ -168,6 +262,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ...state,
         login,
         register,
+        googleSignIn: handleGoogleSignIn,
+        googleCompleteRegistration,
         logout,
         updateUser,
         refreshUser,

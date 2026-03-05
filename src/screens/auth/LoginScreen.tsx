@@ -14,6 +14,7 @@ import {
   PasswordInput,
   Button,
   Spacer,
+  GoogleSignInButton,
 } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/ui/Toast';
@@ -26,12 +27,13 @@ interface Props {
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { login } = useAuth();
+  const { login, googleSignIn } = useAuth();
   const { showError } = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
 
   const validate = () => {
@@ -65,6 +67,21 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       showError(err.message || 'Erreur de connexion', 'Echec');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    try {
+      const result = await googleSignIn();
+      if (result.type === 'needs_registration') {
+        navigation.navigate('Register', { googleData: result.data });
+      }
+      // Si 'authenticated', la navigation se fait automatiquement
+    } catch (err: any) {
+      showError(err.message || 'Erreur Google Sign-In', 'Echec');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -138,6 +155,12 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               <View style={styles.dividerLine} />
             </View>
 
+            <GoogleSignInButton
+              onPress={handleGoogleLogin}
+              loading={googleLoading}
+              style={styles.googleButton}
+            />
+
             <Button
               title="Creer un compte"
               onPress={() => navigation.navigate('Register')}
@@ -207,6 +230,9 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     marginTop: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  googleButton: {
     marginBottom: Spacing.lg,
   },
   // Divider

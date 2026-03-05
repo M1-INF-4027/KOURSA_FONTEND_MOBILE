@@ -35,6 +35,12 @@ const getNotificationIcon = (type: NotificationType): { name: string; color: str
       return { name: 'file-restore-outline', color: Colors.secondary };
     case 'COMPTE_APPROUVE':
       return { name: 'account-check-outline', color: Colors.success };
+    case 'ALERTE_CHEF':
+      return { name: 'alert-circle-outline', color: Colors.error };
+    case 'RAPPEL_ENSEIGNANT':
+      return { name: 'bell-ring-outline', color: '#D97706' };
+    case 'RAPPEL_AUTO':
+      return { name: 'clock-alert-outline', color: Colors.accent };
     default:
       return { name: 'bell-outline', color: Colors.gray[500] };
   }

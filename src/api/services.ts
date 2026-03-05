@@ -112,6 +112,14 @@ export const unitesEnseignementService = {
   delete: (id: number) => api.delete(`/teaching/unites-enseignement/${id}/`),
 };
 
+// ==================== ALERTS ====================
+export const alertsService = {
+  alertEnseignant: (data: { enseignant_id: number; ue_id: number; semaine: string; message?: string }) =>
+    api.post('/notifications/alert-enseignant/', data),
+  alertDelegue: (data: { delegue_id: number; ue_id: number; semaine: string; message?: string }) =>
+    api.post('/notifications/alert-delegue/', data),
+};
+
 export const fichesSuiviService = {
   getAll: () => api.get<FicheSuivi[]>('/teaching/fiches-suivi/'),
   getBySemestre: (semestreId: number) =>
