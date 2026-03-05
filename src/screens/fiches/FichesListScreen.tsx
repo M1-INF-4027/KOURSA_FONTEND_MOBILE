@@ -21,6 +21,7 @@ import {
 } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { fichesSuiviService } from '../../api/services';
+import { useAuth } from '../../contexts/AuthContext';
 import { FicheSuivi, StatutFiche } from '../../types';
 import { Colors } from '../../constants/colors';
 import { Spacing, BorderRadius, Shadows } from '../../constants/spacing';
@@ -33,7 +34,12 @@ type FilterStatus = 'all' | StatutFiche;
 
 const FichesListScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const { showError } = useToast();
+
+  const isDelegue = user?.roles?.some(
+    (r: any) => r.nom_role === 'Délégué' || r.nom_role === 'Delegue'
+  );
 
   const [fiches, setFiches] = useState<FicheSuivi[]>([]);
   const [filteredFiches, setFilteredFiches] = useState<FicheSuivi[]>([]);
@@ -226,20 +232,22 @@ const FichesListScreen: React.FC<Props> = ({ navigation }) => {
               <Text variant="caption" color="tertiary" style={styles.emptySubtext}>
                 {searchQuery || filterStatus !== 'all'
                   ? 'Essayez de modifier vos filtres'
-                  : 'Creez votre premiere fiche de suivi'}
+                  : isDelegue ? 'Creez votre premiere fiche de suivi' : 'Aucune fiche disponible'}
               </Text>
             </View>
           }
           ListFooterComponent={<Spacer size="3xl" />}
         />
 
-        {/* FAB */}
-        <TouchableOpacity
-          style={[styles.fab, { bottom: insets.bottom + Spacing.lg }]}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('CreateFiche')}>
-          <Icon name="plus" size={28} color={Colors.light} />
-        </TouchableOpacity>
+        {/* FAB - uniquement pour les delegues */}
+        {isDelegue && (
+          <TouchableOpacity
+            style={[styles.fab, { bottom: insets.bottom + Spacing.lg }]}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('CreateFiche')}>
+            <Icon name="plus" size={28} color={Colors.light} />
+          </TouchableOpacity>
+        )}
       </View>
     </ScreenContainer>
   );

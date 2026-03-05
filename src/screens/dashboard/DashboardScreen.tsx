@@ -45,6 +45,10 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
       r.nom_role === 'Chef de Département' || r.nom_role === 'Chef de Departement'
   );
 
+  const userIsDelegue = user?.roles?.some(
+    (r: any) => r.nom_role === 'Délégué' || r.nom_role === 'Delegue'
+  );
+
   const [fichesEnAttente, setFichesEnAttente] = useState<FicheSuivi[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
@@ -295,12 +299,14 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
               {/* Actions rapides */}
               <Section title="Actions rapides">
                 <View style={styles.quickActions}>
-                  <QuickActionButton
-                    icon="plus"
-                    label="Nouvelle fiche"
-                    onPress={() => navigation.navigate('CreateFiche')}
-                    color={Colors.primary}
-                  />
+                  {userIsDelegue && (
+                    <QuickActionButton
+                      icon="plus"
+                      label="Nouvelle fiche"
+                      onPress={() => navigation.navigate('CreateFiche')}
+                      color={Colors.primary}
+                    />
+                  )}
                   <QuickActionButton
                     icon="file-document-multiple"
                     label="Mes fiches"
