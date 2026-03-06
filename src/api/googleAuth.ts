@@ -34,8 +34,8 @@ export const signInWithGoogle = async () => {
   // Signer avec Firebase Auth
   const firebaseUser = await auth().signInWithCredential(googleCredential);
 
-  // Recuperer le Firebase ID token pour le backend
-  const firebaseIdToken = await firebaseUser.user.getIdToken();
+  // Recuperer le Firebase ID token pour le backend (force refresh pour eviter les tokens expires)
+  const firebaseIdToken = await firebaseUser.user.getIdToken(true);
 
   return {
     idToken: firebaseIdToken,
