@@ -235,14 +235,20 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             {user?.email}
           </Text>
           <View style={styles.rolesContainer}>
-            {user?.roles?.map((role) => (
-              <Chip
-                key={role.id}
-                label={role.nom_role}
-                color={getRoleChipColor(role.nom_role)}
-                size="small"
-              />
-            ))}
+            {user?.roles?.map((role) => {
+              let label = role.nom_role;
+              if ((role.nom_role === 'Chef de Département' || role.nom_role === 'Chef de Departement') && (user as any).nom_departement) {
+                label = `Chef Dept. ${(user as any).nom_departement}`;
+              }
+              return (
+                <Chip
+                  key={role.id}
+                  label={label}
+                  color={getRoleChipColor(role.nom_role)}
+                  size="small"
+                />
+              );
+            })}
             <Chip
               label={getStatusLabel(user?.statut || '')}
               color={getStatusColor()}

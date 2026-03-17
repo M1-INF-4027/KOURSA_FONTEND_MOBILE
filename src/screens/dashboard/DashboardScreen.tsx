@@ -96,7 +96,12 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
 
   const getUserRoles = () => {
     if (!user?.roles?.length) return ['Utilisateur'];
-    return user.roles.map((r: any) => r.nom_role);
+    return user.roles.map((r: any) => {
+      if ((r.nom_role === 'Chef de Département' || r.nom_role === 'Chef de Departement') && (user as any).nom_departement) {
+        return `Chef Dept. ${(user as any).nom_departement}`;
+      }
+      return r.nom_role;
+    });
   };
 
   const getRoleColorByName = (role: string) => {
