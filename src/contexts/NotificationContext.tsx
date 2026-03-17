@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { Platform, AppState } from 'react-native';
+import { Platform, AppState, Vibration } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import { NavigationContainerRef } from '@react-navigation/native';
 import { useAuth } from './AuthContext';
@@ -85,12 +85,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Foreground message handler
     const unsubscribeMessage = messaging().onMessage(async () => {
       setUnreadCount((prev) => prev + 1);
+      // Vibrate on notification (respects phone ringer mode)
+      Vibration.vibrate([0, 250, 200, 250]);
     });
+
+    const ficheTypes = ['FICHE_SOUMISE', 'FICHE_VALIDEE', 'FICHE_REFUSEE', 'FICHE_RESOUMISE'];
 
     // Background tap handler
     const unsubscribeNotificationOpen = messaging().onNotificationOpenedApp((remoteMessage) => {
       const data = remoteMessage.data;
-      if (data?.related_object_id && data?.type !== 'COMPTE_APPROUVE') {
+      if (data?.related_object_id && ficheTypes.includes(data?.type as string)) {
         setTimeout(() => navigateToFiche(data.related_object_id as string), 500);
       }
     });
@@ -99,7 +103,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     messaging()
       .getInitialNotification()
       .then((remoteMessage) => {
-        if (remoteMessage?.data?.related_object_id && remoteMessage.data.type !== 'COMPTE_APPROUVE') {
+        if (remoteMessage?.data?.related_object_id && ficheTypes.includes(remoteMessage.data.type as string)) {
           setTimeout(() => navigateToFiche(remoteMessage.data!.related_object_id as string), 1000);
         }
       });

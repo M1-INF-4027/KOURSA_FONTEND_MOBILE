@@ -24,7 +24,7 @@ import {
 } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { fichesSuiviService, usersService } from '../../api/services';
+import { fichesSuiviService } from '../../api/services';
 import { FicheSuivi } from '../../types';
 import { Colors } from '../../constants/colors';
 import { Spacing, BorderRadius } from '../../constants/spacing';
@@ -48,7 +48,6 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showRefusDialog, setShowRefusDialog] = useState(false);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   useEffect(() => {
     loadFiche();
@@ -114,28 +113,15 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     return fiche.delegue === user.id;
   };
 
-  const handleValider = async (password: string) => {
-    if (!password.trim()) {
-      showError('Veuillez saisir votre mot de passe');
-      return;
-    }
+  const handleValider = async () => {
     setActionLoading(true);
     try {
-      // Obtenir le token de validation via confirmation du mot de passe
-      const tokenRes = await usersService.confirmPassword(password);
-      const validationToken = tokenRes.data.validation_token;
-      // Valider la fiche avec le token
-      await fichesSuiviService.valider(ficheId, validationToken);
+      await fichesSuiviService.valider(ficheId);
       showSuccess('Fiche validee avec succes');
-      setShowPasswordDialog(false);
       await loadFiche();
     } catch (error: any) {
       const detail = error.response?.data?.detail;
-      if (detail?.includes('Mot de passe')) {
-        showError('Mot de passe incorrect', 'Erreur');
-      } else {
-        showError(detail || 'Impossible de valider la fiche', 'Erreur');
-      }
+      showError(detail || 'Impossible de valider la fiche', 'Erreur');
     } finally {
       setActionLoading(false);
     }
@@ -386,7 +372,7 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             <View style={styles.actionButtons}>
               <Button
                 title="Valider"
-                onPress={() => setShowPasswordDialog(true)}
+                onPress={handleValider}
                 variant="success"
                 icon="check-circle"
                 loading={actionLoading}
@@ -450,16 +436,6 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         multiline
       />
 
-      {/* Dialog de confirmation par mot de passe pour validation */}
-      <InputDialog
-        visible={showPasswordDialog}
-        onDismiss={() => setShowPasswordDialog(false)}
-        title="Confirmez votre mot de passe"
-        placeholder="Saisissez votre mot de passe..."
-        onSubmit={handleValider}
-        submitText="Valider la fiche"
-        cancelText="Annuler"
-      />
     </ScreenContainer>
   );
 };

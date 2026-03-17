@@ -61,11 +61,19 @@ const getRelativeTime = (dateString: string): string => {
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 };
 
+const FICHE_NOTIFICATION_TYPES: NotificationType[] = [
+  'FICHE_SOUMISE',
+  'FICHE_VALIDEE',
+  'FICHE_REFUSEE',
+  'FICHE_RESOUMISE',
+];
+
 const NotificationsScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { refreshUnreadCount } = useNotifications();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -106,8 +114,10 @@ const NotificationsScreen: React.FC<Props> = ({ navigation }) => {
       }
     }
 
-    if (item.related_object_id && item.notification_type !== 'COMPTE_APPROUVE') {
+    if (item.related_object_id && FICHE_NOTIFICATION_TYPES.includes(item.notification_type)) {
       navigation.navigate('FicheDetail', { ficheId: item.related_object_id });
+    } else {
+      setSelectedNotification(item);
     }
   };
 
@@ -172,6 +182,45 @@ const NotificationsScreen: React.FC<Props> = ({ navigation }) => {
           )}
         </View>
       </View>
+
+      {/* Notification Detail Modal */}
+      {selectedNotification && (
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setSelectedNotification(null)}
+          />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={[styles.modalIconContainer, { backgroundColor: getNotificationIcon(selectedNotification.notification_type).color + '15' }]}>
+                <Icon
+                  name={getNotificationIcon(selectedNotification.notification_type).name}
+                  size={28}
+                  color={getNotificationIcon(selectedNotification.notification_type).color}
+                />
+              </View>
+              <TouchableOpacity onPress={() => setSelectedNotification(null)}>
+                <Icon name="close" size={24} color={Colors.gray[400]} />
+              </TouchableOpacity>
+            </View>
+            <Text variant="h6" style={styles.modalTitle}>
+              {selectedNotification.title}
+            </Text>
+            <Text variant="body" color="secondary" style={styles.modalBody}>
+              {selectedNotification.body}
+            </Text>
+            <Text variant="caption" color="tertiary" style={styles.modalTime}>
+              {getRelativeTime(selectedNotification.created_at)}
+            </Text>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setSelectedNotification(null)}>
+              <Text variant="label" style={styles.modalCloseButtonText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Content */}
       <View style={styles.content}>
@@ -287,6 +336,70 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: Spacing.md,
+  },
+  // Modal styles
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: Colors.light,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    marginHorizontal: Spacing.xl,
+    width: '85%',
+    maxWidth: 400,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  modalIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    marginBottom: Spacing.sm,
+  },
+  modalBody: {
+    lineHeight: 22,
+    marginBottom: Spacing.md,
+  },
+  modalTime: {
+    marginBottom: Spacing.lg,
+  },
+  modalCloseButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+  },
+  modalCloseButtonText: {
+    color: Colors.light,
   },
 });
 

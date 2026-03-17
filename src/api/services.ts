@@ -36,6 +36,8 @@ export const usersService = {
     api.post<{ validation_token: string }>('/users/utilisateurs/confirm-password/', { password }),
   getMesUtilisateurs: () =>
     api.get('/users/utilisateurs/mes-utilisateurs/'),
+  changerNiveau: (niveauId: number) =>
+    api.post('/users/utilisateurs/changer-niveau/', { niveau_id: niveauId }),
 };
 
 // ==================== FCM ====================
@@ -99,6 +101,7 @@ export const sallesService = {
 // ==================== TEACHING ====================
 export const unitesEnseignementService = {
   getAll: () => api.get<UniteEnseignement[]>('/teaching/unites-enseignement/'),
+  getMesDelegues: () => api.get('/teaching/unites-enseignement/mes-delegues/'),
   getBySemestre: (semestreId: number) =>
     api.get<UniteEnseignement[]>(`/teaching/unites-enseignement/?semestre_id=${semestreId}`),
   getByAnnee: (anneeId: number) =>
@@ -134,8 +137,8 @@ export const fichesSuiviService = {
   delete: (id: number) => api.delete(`/teaching/fiches-suivi/${id}/`),
   // Actions specifiques
   getEnAttente: () => api.get<FicheSuivi[]>('/teaching/fiches-suivi/en-attente/'),
-  valider: (id: number, validationToken: string) =>
-    api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/valider/`, { validation_token: validationToken }),
+  valider: (id: number) =>
+    api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/valider/`),
   refuser: (id: number, motif: string) =>
     api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/refuser/`, { motif_refus: motif }),
   resoumettre: (id: number) =>

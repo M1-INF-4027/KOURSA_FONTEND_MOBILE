@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ScreenContainer,
@@ -51,6 +51,7 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
 
   const [fichesEnAttente, setFichesEnAttente] = useState<FicheSuivi[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     validees: 0,
@@ -238,11 +239,53 @@ const DashboardScreen: React.FC<Props> = ({ navigation }) => {
               icon="logout"
               size={22}
               color={Colors.light}
-              onPress={logout}
+              onPress={() => setShowLogoutDialog(true)}
             />
           </View>
         </View>
       </View>
+
+      {/* Logout Confirmation Dialog */}
+      <Modal
+        visible={showLogoutDialog}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLogoutDialog(false)}>
+        <View style={styles.logoutOverlay}>
+          <TouchableOpacity
+            style={styles.logoutBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowLogoutDialog(false)}
+          />
+          <View style={styles.logoutModal}>
+            <View style={styles.logoutIconRow}>
+              <View style={styles.logoutIconContainer}>
+                <Icon name="logout" size={28} color={Colors.error} />
+              </View>
+            </View>
+            <Text variant="h6" style={styles.logoutTitle}>Se deconnecter</Text>
+            <Text variant="body" color="secondary" style={styles.logoutMessage}>
+              Etes-vous sur de vouloir vous deconnecter de votre compte ?
+            </Text>
+            <View style={styles.logoutActions}>
+              <TouchableOpacity
+                style={styles.logoutCancelBtn}
+                onPress={() => setShowLogoutDialog(false)}>
+                <Text variant="label" style={styles.logoutCancelText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.logoutConfirmBtn}
+                onPress={() => {
+                  setShowLogoutDialog(false);
+                  logout();
+                }}>
+                <Icon name="logout" size={18} color={Colors.light} />
+                <Text variant="label" style={styles.logoutConfirmText}>Se deconnecter</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Contenu principal */}
       <View style={styles.content}>
@@ -512,6 +555,81 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: Spacing.md,
     textAlign: 'center',
+  },
+  // Logout Modal
+  logoutOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoutBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  logoutModal: {
+    backgroundColor: Colors.light,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    width: '85%',
+    maxWidth: 400,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+  },
+  logoutIconRow: {
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  logoutIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.error + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutTitle: {
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  logoutMessage: {
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+    lineHeight: 22,
+  },
+  logoutActions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  logoutCancelBtn: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border.default,
+    alignItems: 'center',
+  },
+  logoutCancelText: {
+    color: Colors.text.secondary,
+  },
+  logoutConfirmBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+  },
+  logoutConfirmText: {
+    color: Colors.light,
   },
 });
 

@@ -50,6 +50,7 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [loadingFiche, setLoadingFiche] = useState(isEditMode);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [conflicts, setConflicts] = useState<any[]>([]);
 
   // Form state
@@ -238,6 +239,11 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
     } catch {
       return [];
     }
+  };
+
+  const handlePreview = () => {
+    if (!validateForm()) return;
+    setShowPreview(true);
   };
 
   const handleSubmit = async () => {
@@ -808,16 +814,162 @@ const CreateFicheScreen: React.FC<Props> = ({ navigation, route }) => {
           <Spacer size="lg" />
 
           <Button
-            title={loading ? (isEditMode ? 'Modification...' : 'Soumission...') : (isEditMode ? 'Modifier et resoumettre' : 'Soumettre la fiche')}
-            onPress={handleSubmit}
+            title={isEditMode ? 'Modifier et resoumettre' : 'Verifier et soumettre'}
+            onPress={isEditMode ? handleSubmit : handlePreview}
             loading={loading}
             fullWidth
-            icon={isEditMode ? 'refresh' : 'send'}
+            icon={isEditMode ? 'refresh' : 'eye'}
           />
 
           <Spacer size="3xl" />
         </ScrollView>
       </View>
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <View style={previewStyles.overlay}>
+          <View style={previewStyles.container}>
+            {/* Preview Header */}
+            <View style={[previewStyles.header, { paddingTop: insets.top + Spacing.md }]}>
+              <View style={styles.headerRow}>
+                <IconButton
+                  icon="arrow-left"
+                  size={22}
+                  color={Colors.light}
+                  onPress={() => setShowPreview(false)}
+                />
+                <Text variant="h5" style={styles.headerTitle}>
+                  Previsualisation
+                </Text>
+                <View style={{ width: 40 }} />
+              </View>
+            </View>
+
+            <ScrollView
+              style={previewStyles.content}
+              contentContainerStyle={previewStyles.scrollContent}
+              showsVerticalScrollIndicator={false}>
+              {/* Warning */}
+              <Card style={previewStyles.warningCard}>
+                <CardContent>
+                  <View style={previewStyles.warningRow}>
+                    <Icon name="alert-circle" size={22} color={Colors.status.warning} />
+                    <Text variant="body" style={previewStyles.warningText}>
+                      Veuillez verifier que toutes les informations sont correctes. Vous ne pourrez plus modifier cette fiche apres soumission.
+                    </Text>
+                  </View>
+                </CardContent>
+              </Card>
+
+              {/* Course Info */}
+              <Section title="Informations du cours">
+                <Card>
+                  <CardContent>
+                    <View style={previewStyles.infoRow}>
+                      <Icon name="book-open-variant" size={18} color={Colors.text.secondary} />
+                      <View style={previewStyles.infoContent}>
+                        <Text variant="caption" color="tertiary">UE</Text>
+                        <Text variant="body">{getSelectedUeLabel()}</Text>
+                      </View>
+                    </View>
+                    <View style={previewStyles.divider} />
+                    <View style={previewStyles.infoRow}>
+                      <Icon name="account" size={18} color={Colors.text.secondary} />
+                      <View style={previewStyles.infoContent}>
+                        <Text variant="caption" color="tertiary">Enseignant</Text>
+                        <Text variant="body">{getSelectedEnseignantLabel()}</Text>
+                      </View>
+                    </View>
+                    <View style={previewStyles.divider} />
+                    <View style={previewStyles.infoRow}>
+                      <Icon name="calendar" size={18} color={Colors.text.secondary} />
+                      <View style={previewStyles.infoContent}>
+                        <Text variant="caption" color="tertiary">Date</Text>
+                        <Text variant="body">{dateCours}</Text>
+                      </View>
+                    </View>
+                    <View style={previewStyles.divider} />
+                    <View style={previewStyles.infoRow}>
+                      <Icon name="clock-outline" size={18} color={Colors.text.secondary} />
+                      <View style={previewStyles.infoContent}>
+                        <Text variant="caption" color="tertiary">Horaires</Text>
+                        <Text variant="body">{heureDebut} - {heureFin}</Text>
+                      </View>
+                    </View>
+                    {selectedSalle ? (
+                      <>
+                        <View style={previewStyles.divider} />
+                        <View style={previewStyles.infoRow}>
+                          <Icon name="door" size={18} color={Colors.text.secondary} />
+                          <View style={previewStyles.infoContent}>
+                            <Text variant="caption" color="tertiary">Salle</Text>
+                            <Text variant="body">{getSelectedSalleLabel()}</Text>
+                          </View>
+                        </View>
+                      </>
+                    ) : null}
+                    <View style={previewStyles.divider} />
+                    <View style={previewStyles.infoRow}>
+                      <Icon name="school" size={18} color={Colors.text.secondary} />
+                      <View style={previewStyles.infoContent}>
+                        <Text variant="caption" color="tertiary">Type de seance</Text>
+                        <Chip
+                          label={typeSeance === 'CM' ? 'Cours Magistral' : typeSeance === 'TD' ? 'Travaux Diriges' : 'Travaux Pratiques'}
+                          color="primary"
+                          size="small"
+                        />
+                      </View>
+                    </View>
+                  </CardContent>
+                </Card>
+              </Section>
+
+              {/* Pedagogical content */}
+              <Section title="Contenu pedagogique">
+                <Card>
+                  <CardContent>
+                    <Text variant="caption" color="tertiary">Titre du chapitre</Text>
+                    <Text variant="subtitle" style={{ marginTop: Spacing.xs, marginBottom: Spacing.md }}>
+                      {titreChapitre}
+                    </Text>
+                    <View style={previewStyles.divider} />
+                    <Text variant="caption" color="tertiary">Contenu aborde</Text>
+                    <Text variant="body" style={{ marginTop: Spacing.xs, lineHeight: 22 }}>
+                      {contenuAborde}
+                    </Text>
+                  </CardContent>
+                </Card>
+              </Section>
+
+              <Spacer size="lg" />
+
+              {/* Actions */}
+              <View style={previewStyles.actions}>
+                <Button
+                  title="Modifier"
+                  onPress={() => setShowPreview(false)}
+                  variant="outline"
+                  icon="pencil"
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  title="Soumettre"
+                  onPress={() => {
+                    setShowPreview(false);
+                    handleSubmit();
+                  }}
+                  variant="primary"
+                  icon="send"
+                  loading={loading}
+                  style={{ flex: 1 }}
+                />
+              </View>
+
+              <Spacer size="3xl" />
+            </ScrollView>
+          </View>
+        </View>
+      )}
 
       {/* Success Dialog */}
       <AlertDialog
@@ -971,6 +1123,67 @@ const styles = StyleSheet.create({
   conflictMessage: {
     color: Colors.text.secondary,
     marginBottom: Spacing.xs,
+  },
+});
+
+const previewStyles = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 200,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+  },
+  header: {
+    paddingHorizontal: Spacing.base,
+    paddingBottom: Spacing.lg,
+  },
+  content: {
+    flex: 1,
+    backgroundColor: Colors.background.primary,
+    borderTopLeftRadius: BorderRadius['2xl'],
+    borderTopRightRadius: BorderRadius['2xl'],
+  },
+  scrollContent: {
+    padding: Spacing.base,
+    paddingTop: Spacing.xl,
+  },
+  warningCard: {
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.status.warning,
+    marginBottom: Spacing.md,
+  },
+  warningRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.md,
+  },
+  warningText: {
+    flex: 1,
+    color: Colors.status.warning,
+    lineHeight: 22,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  infoContent: {
+    flex: 1,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border.light,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
   },
 });
 

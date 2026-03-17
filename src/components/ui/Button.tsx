@@ -219,6 +219,7 @@ interface IconButtonProps {
   variant?: ButtonVariant;
   size?: number;
   disabled?: boolean;
+  color?: string;
   style?: ViewStyle;
 }
 
@@ -228,6 +229,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   variant = 'ghost',
   size = 24,
   disabled = false,
+  color,
   style,
 }) => {
   const variantStyles = getVariantStyles(variant, disabled);
@@ -251,7 +253,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       <Icon
         name={icon}
         size={size}
-        color={variantStyles.text.color || Colors.primary}
+        color={color || variantStyles.text.color || Colors.primary}
       />
     </TouchableOpacity>
   );

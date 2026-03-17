@@ -27,7 +27,7 @@ import {
   Section,
 } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
-import { usersService, rolesService } from '../../api/services';
+import { usersService, rolesService, unitesEnseignementService } from '../../api/services';
 import { useAuth } from '../../contexts/AuthContext';
 import { Utilisateur, Role, StatutCompte } from '../../types';
 import { Colors } from '../../constants/colors';
@@ -73,8 +73,16 @@ const UsersScreen: React.FC<Props> = ({ navigation }) => {
     (r) => r.nom_role === 'Délégué' || r.nom_role === 'Delegue'
   ) ?? false;
 
+  const isEnseignant = currentUser?.roles?.some(
+    (r) => r.nom_role === 'Enseignant'
+  ) ?? false;
+
   if (isDelegue) {
     return <DelegueUsersView navigation={navigation} />;
+  }
+
+  if (isEnseignant) {
+    return <EnseignantUsersView navigation={navigation} />;
   }
 
   return <DefaultUsersView navigation={navigation} />;
@@ -269,7 +277,232 @@ const DelegueUsersView: React.FC<Props> = ({ navigation }) => {
 };
 
 // ============================================================
-// Vue par defaut (non-delegue): comportement existant inchange
+// Vue ENSEIGNANT: affichage par matiere avec delegues
+// ============================================================
+
+interface MesDeleguesNiveau {
+  id: number;
+  nom_niveau: string;
+  filiere_nom: string;
+}
+
+interface MesDeleguesUE {
+  id: number;
+  code_ue: string;
+  libelle_ue: string;
+}
+
+interface MesDeleguesDelegue {
+  id: number;
+  nom_complet: string;
+  email: string;
+}
+
+interface MesDeleguesItem {
+  niveau: MesDeleguesNiveau;
+  ues: MesDeleguesUE[];
+  delegues: MesDeleguesDelegue[];
+}
+
+const EnseignantUsersView: React.FC<Props> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+  const { showError } = useToast();
+
+  const [data, setData] = useState<MesDeleguesItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [expandedNiveau, setExpandedNiveau] = useState<number | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await unitesEnseignementService.getMesDelegues();
+      setData(res.data as MesDeleguesItem[]);
+    } catch (error) {
+      console.error('Error loading mes-delegues:', error);
+      showError('Impossible de charger les donnees', 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  }, [showError]);
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    const first = parts[0]?.[0] || '';
+    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+    return `${first}${last}`.toUpperCase();
+  };
+
+  return (
+    <ScreenContainer
+      backgroundColor={Colors.primary}
+      statusBarStyle="light-content"
+      edges={[]}>
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+        <Text variant="h5" style={styles.headerTitle}>
+          Mes Delegues
+        </Text>
+        <Text variant="caption" style={styles.headerSubtitle}>
+          Delegues des classes dans lesquelles vous enseignez
+        </Text>
+      </View>
+
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={loadData}
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
+          />
+        }>
+        {data.length > 0 ? (
+          data.map((item) => {
+            const isExpanded = expandedNiveau === item.niveau.id;
+            return (
+              <Card key={item.niveau.id} style={styles.userCard}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => setExpandedNiveau(isExpanded ? null : item.niveau.id)}>
+                  <CardContent>
+                    <View style={styles.enseignantHeader}>
+                      <View style={enseignantStyles.niveauHeader}>
+                        <View style={enseignantStyles.niveauIconContainer}>
+                          <Icon name="school" size={22} color={Colors.primary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text variant="subtitle">
+                            {item.niveau.filiere_nom} - {item.niveau.nom_niveau}
+                          </Text>
+                          <Text variant="caption" color="tertiary">
+                            {item.ues.length} UE{item.ues.length > 1 ? 's' : ''} · {item.delegues.length} delegue{item.delegues.length > 1 ? 's' : ''}
+                          </Text>
+                        </View>
+                      </View>
+                      <Icon
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={22}
+                        color={Colors.gray[400]}
+                      />
+                    </View>
+
+                    {isExpanded && (
+                      <View style={enseignantStyles.expandedContent}>
+                        {/* UEs enseignees */}
+                        <View style={enseignantStyles.subsection}>
+                          <Text variant="caption" color="tertiary" style={enseignantStyles.subsectionTitle}>
+                            UEs enseignees
+                          </Text>
+                          <View style={enseignantStyles.ueChips}>
+                            {item.ues.map((ue) => (
+                              <Chip
+                                key={ue.id}
+                                label={`${ue.code_ue} - ${ue.libelle_ue}`}
+                                color="primary"
+                                size="small"
+                              />
+                            ))}
+                          </View>
+                        </View>
+
+                        {/* Delegues */}
+                        <View style={enseignantStyles.subsection}>
+                          <Text variant="caption" color="tertiary" style={enseignantStyles.subsectionTitle}>
+                            Delegues
+                          </Text>
+                          {item.delegues.length > 0 ? (
+                            item.delegues.map((delegue) => (
+                              <View key={delegue.id} style={enseignantStyles.delegueRow}>
+                                <Avatar
+                                  initials={getInitials(delegue.nom_complet)}
+                                  size="md"
+                                  color={Colors.secondary}
+                                />
+                                <View style={{ flex: 1 }}>
+                                  <Text variant="body">{delegue.nom_complet}</Text>
+                                  <Text variant="caption" color="tertiary">{delegue.email}</Text>
+                                </View>
+                              </View>
+                            ))
+                          ) : (
+                            <Text variant="caption" color="tertiary" style={{ paddingVertical: Spacing.sm }}>
+                              Aucun delegue assigne a ce niveau
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    )}
+                  </CardContent>
+                </TouchableOpacity>
+              </Card>
+            );
+          })
+        ) : !loading ? (
+          <View style={styles.emptyContainer}>
+            <Icon name="account-group" size={64} color={Colors.gray[300]} />
+            <Text variant="body" color="secondary" style={styles.emptyText}>
+              Aucune donnee disponible
+            </Text>
+            <Text variant="caption" color="tertiary" style={styles.emptySubtext}>
+              Vous n'avez aucune UE assignee
+            </Text>
+          </View>
+        ) : null}
+
+        <Spacer size="3xl" />
+      </ScrollView>
+    </ScreenContainer>
+  );
+};
+
+const enseignantStyles = StyleSheet.create({
+  niveauHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: Spacing.md,
+  },
+  niveauIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  expandedContent: {
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.light,
+  },
+  subsection: {
+    marginBottom: Spacing.md,
+  },
+  subsectionTitle: {
+    marginBottom: Spacing.sm,
+    fontWeight: '600',
+  },
+  ueChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+  },
+  delegueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+});
+
+// ============================================================
+// Vue par defaut (non-delegue, non-enseignant): comportement existant inchange
 // ============================================================
 
 const DefaultUsersView: React.FC<Props> = ({ navigation }) => {
