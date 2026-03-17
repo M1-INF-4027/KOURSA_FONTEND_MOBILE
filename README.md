@@ -13,6 +13,9 @@ Application mobile React Native pour la plateforme **Koursa** - Systeme de gesti
 | React Navigation | 7.x | Navigation |
 | Axios | 1.7.9 | Client HTTP |
 | AsyncStorage | 2.1.0 | Stockage local |
+| Firebase Messaging | 23.8.6 | Notifications push |
+| Google Sign-In | 16.1.1 | Authentification Google |
+| Lucide React Native | - | Icones |
 
 ## Structure du projet
 
@@ -23,18 +26,28 @@ KOURSA_FONTEND_MOBILE/
 │   │   ├── config.ts           # Configuration Axios
 │   │   └── services.ts         # Services CRUD
 │   ├── contexts/               # Contextes React
-│   │   └── AuthContext.tsx     # Authentification
+│   │   ├── AuthContext.tsx     # Authentification + Google Sign-In
+│   │   └── NotificationContext.tsx # Notifications FCM + vibration
 │   ├── navigation/             # Navigation
-│   │   └── AppNavigator.tsx    # Configuration routes
+│   │   └── AppNavigator.tsx    # Configuration routes (Tabs, Drawer, Stack)
 │   ├── screens/                # Ecrans
 │   │   ├── auth/               # Authentification
 │   │   │   ├── LoginScreen.tsx
 │   │   │   └── RegisterScreen.tsx
-│   │   ├── dashboard/          # Dashboard
+│   │   ├── dashboard/          # Dashboard avec logout dialog
 │   │   │   └── DashboardScreen.tsx
-│   │   └── fiches/             # Fiches de suivi
-│   │       ├── FichesListScreen.tsx
-│   │       └── CreateFicheScreen.tsx
+│   │   ├── fiches/             # Fiches de suivi
+│   │   │   ├── FichesListScreen.tsx
+│   │   │   ├── CreateFicheScreen.tsx  # Avec preview avant soumission
+│   │   │   └── FicheDetailScreen.tsx  # Validation directe
+│   │   ├── academic/           # Structure academique
+│   │   │   └── AcademicScreen.tsx
+│   │   ├── users/              # Utilisateurs (vue adaptee par role)
+│   │   │   └── UsersScreen.tsx
+│   │   ├── profile/            # Profil + changement niveau
+│   │   │   └── ProfileScreen.tsx
+│   │   └── notifications/      # Notifications avec routage intelligent
+│   │       └── NotificationsScreen.tsx
 │   ├── theme/                  # Theme et couleurs
 │   │   └── index.ts
 │   └── types/                  # Types TypeScript
@@ -48,12 +61,13 @@ KOURSA_FONTEND_MOBILE/
 
 ### Authentification
 - Ecran de connexion (email/password)
+- Google Sign-In via Firebase Authentication
 - Ecran d'inscription avec selection de role
 - Gestion de session avec AsyncStorage
-- Deconnexion
+- Dialog de confirmation avant deconnexion
 
 ### Dashboard
-- Affichage du profil utilisateur
+- Affichage du profil utilisateur avec nom du departement pour les chefs
 - Statistiques des fiches (total, validees, refusees, en attente)
 - Liste des fiches en attente
 - Actions rapides (nouvelle fiche, mes fiches, academique)
@@ -61,8 +75,26 @@ KOURSA_FONTEND_MOBILE/
 ### Gestion des fiches de suivi
 - Liste des fiches avec filtrage par statut
 - Recherche par UE, chapitre, contenu
-- Creation de nouvelle fiche
+- Creation de nouvelle fiche avec previsualisation avant soumission
+- Restriction de date a 3 jours dans le passe pour les delegues
+- Validation directe par l'enseignant (sans mot de passe)
+- Detection de conflits (salle, enseignant)
 - Affichage du type de seance (CM, TD, TP)
+
+### Notifications
+- Notifications push via Firebase Cloud Messaging
+- Vibration du telephone a la reception (respecte le mode sonnerie)
+- Routage intelligent : notifications fiche → detail fiche, alertes → dialog details
+- Badge de compteur non-lus
+
+### Espace enseignant
+- Vue des delegues par matiere (filiere/niveau)
+- Validation/refus des fiches
+
+### Profil
+- Edition des informations personnelles
+- Changement de mot de passe
+- Changement de niveau/filiere pour les delegues (nouvelle annee academique)
 
 ### Theme
 - Support mode clair/sombre automatique
@@ -121,14 +153,17 @@ const API_BASE_URL = 'http://localhost:8000/api';
 const API_BASE_URL = 'http://192.168.1.X:8000/api';
 ```
 
-## Ecrans a implementer
+## Ecrans implementes
 
-- [ ] Detail d'une fiche (FicheDetailScreen)
-- [ ] Validation/Refus des fiches
-- [ ] Gestion academique (Facultes, Departements, Filieres, Niveaux)
-- [ ] Gestion des utilisateurs
-- [ ] Profil utilisateur
-- [ ] Notifications
+- [x] Dashboard avec statistiques et actions rapides
+- [x] Detail d'une fiche (FicheDetailScreen)
+- [x] Validation/Refus des fiches (validation directe sans mot de passe)
+- [x] Gestion academique (Facultes, Departements, Filieres, Niveaux)
+- [x] Gestion des utilisateurs (vue adaptee par role)
+- [x] Vue enseignant : delegues par matiere
+- [x] Profil utilisateur avec changement de niveau
+- [x] Notifications avec routage intelligent
+- [x] Previsualisation fiche avant soumission
 
 ## Navigation
 
