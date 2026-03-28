@@ -32,8 +32,6 @@ export const usersService = {
   delete: (id: number) => api.delete(`/users/utilisateurs/${id}/`),
   changePassword: (id: number, password: string) =>
     api.patch<Utilisateur>(`/users/utilisateurs/${id}/`, { password }),
-  confirmPassword: (password: string) =>
-    api.post<{ validation_token: string }>('/users/utilisateurs/confirm-password/', { password }),
   getMesUtilisateurs: () =>
     api.get('/users/utilisateurs/mes-utilisateurs/'),
   changerNiveau: (niveauId: number) =>
@@ -145,4 +143,5 @@ export const fichesSuiviService = {
     api.post<FicheSuivi>(`/teaching/fiches-suivi/${id}/resoumettre/`),
   checkConflicts: (data: { salle?: number | null; enseignant?: number | null; date_cours: string; heure_debut: string; heure_fin: string; exclude_fiche_id?: number }) =>
     api.post('/teaching/fiches-suivi/check-conflicts/', data),
+  exportPdfUrl: (id: number) => `/teaching/fiches-suivi/${id}/export-pdf/`,
 };

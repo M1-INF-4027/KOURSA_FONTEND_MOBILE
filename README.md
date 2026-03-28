@@ -78,12 +78,15 @@ KOURSA_FONTEND_MOBILE/
 - Creation de nouvelle fiche avec previsualisation avant soumission
 - Restriction de date a 3 jours dans le passe pour les delegues
 - Validation directe par l'enseignant (sans mot de passe)
+- Telechargement PDF de la fiche validee (format officiel universite)
 - Detection de conflits (salle, enseignant)
 - Affichage du type de seance (CM, TD, TP)
 
 ### Notifications
 - Notifications push via Firebase Cloud Messaging
-- Vibration du telephone a la reception (respecte le mode sonnerie)
+- Canal Android `koursa_default` (importance HIGH, son + vibration)
+- Son par defaut sur iOS via payload APNs
+- Vibration du telephone a la reception en foreground (respecte le mode sonnerie)
 - Routage intelligent : notifications fiche → detail fiche, alertes → dialog details
 - Badge de compteur non-lus
 
@@ -158,11 +161,12 @@ const API_BASE_URL = 'http://192.168.1.X:8000/api';
 - [x] Dashboard avec statistiques et actions rapides
 - [x] Detail d'une fiche (FicheDetailScreen)
 - [x] Validation/Refus des fiches (validation directe sans mot de passe)
+- [x] Telechargement PDF des fiches (ouverture navigateur avec token JWT)
 - [x] Gestion academique (Facultes, Departements, Filieres, Niveaux)
 - [x] Gestion des utilisateurs (vue adaptee par role)
 - [x] Vue enseignant : delegues par matiere
 - [x] Profil utilisateur avec changement de niveau
-- [x] Notifications avec routage intelligent
+- [x] Notifications avec routage intelligent et canal Android dedie
 - [x] Previsualisation fiche avant soumission
 
 ## Navigation
@@ -224,6 +228,9 @@ fichesSuiviService.getEnAttente()
 fichesSuiviService.create(data)
 fichesSuiviService.valider(id)
 fichesSuiviService.refuser(id, motif)
+fichesSuiviService.resoumettre(id)
+fichesSuiviService.exportPdfUrl(id)    // URL pour telechargement PDF
+fichesSuiviService.checkConflicts(data)
 // ... CRUD complet
 ```
 

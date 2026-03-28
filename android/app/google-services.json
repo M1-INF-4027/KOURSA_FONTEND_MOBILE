@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "248579793606-77u9abh1g2rqi7fclso84u74tq63ckcs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.koursa",
+            "certificate_hash": "17f4da1f80f6fdade3fbd731f9e8f291c3d01854"
+          }
+        },
+        {
           "client_id": "248579793606-si1u2fo4vhb0p90kng6c3ov4ij812hfk.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

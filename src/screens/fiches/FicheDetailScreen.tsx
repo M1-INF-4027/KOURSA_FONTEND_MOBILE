@@ -4,7 +4,8 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator, Linking } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -25,6 +26,7 @@ import {
 import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { fichesSuiviService } from '../../api/services';
+import { API_BASE_URL } from '../../api/config';
 import { FicheSuivi } from '../../types';
 import { Colors } from '../../constants/colors';
 import { Spacing, BorderRadius } from '../../constants/spacing';
@@ -48,6 +50,7 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showRefusDialog, setShowRefusDialog] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     loadFiche();
@@ -147,6 +150,32 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
       showError('Impossible de refuser la fiche', 'Erreur');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const isAdminOrChef = (): boolean => {
+    if (!user) return false;
+    return user.roles?.some((r: any) => {
+      const name = r.nom_role || r;
+      return name === 'Super Administrateur' || name === 'Chef de Département';
+    }) || user.is_superuser || false;
+  };
+
+  const canDownloadPdf = (): boolean => {
+    if (!fiche) return false;
+    return isAdminOrChef() || fiche.statut === 'VALIDEE';
+  };
+
+  const handleDownloadPdf = async () => {
+    setPdfLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const url = `${API_BASE_URL}${fichesSuiviService.exportPdfUrl(ficheId)}?token=${token}`;
+      await Linking.openURL(url);
+    } catch {
+      showError('Impossible de telecharger le PDF');
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -416,6 +445,20 @@ const FicheDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           </Card>
         )}
 
+        {/* Telecharger PDF */}
+        {canDownloadPdf() && (
+          <View style={styles.pdfButton}>
+            <Button
+              title={pdfLoading ? 'Ouverture...' : 'Telecharger PDF'}
+              onPress={handleDownloadPdf}
+              variant="outline"
+              icon="file-pdf-box"
+              fullWidth
+              disabled={pdfLoading}
+            />
+          </View>
+        )}
+
         {/* Date de soumission */}
         <Text variant="caption" color="tertiary" style={styles.soumissionDate}>
           Soumise le {fiche.date_soumission}
@@ -563,6 +606,10 @@ const styles = StyleSheet.create({
   },
   statusMessageCard: {
     marginTop: Spacing.md,
+  },
+  // PDF
+  pdfButton: {
+    marginTop: Spacing.lg,
   },
   // Soumission
   soumissionDate: {
