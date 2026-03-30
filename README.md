@@ -146,15 +146,22 @@ npm run ios
 L'URL de l'API est configuree dans `src/api/config.ts` :
 
 ```typescript
-// Pour Android Emulator
+// Production (par defaut)
+const API_BASE_URL = 'https://koursa.duckdns.org/api';
+
+// Pour Android Emulator (dev)
 const API_BASE_URL = 'http://10.0.2.2:8000/api';
 
-// Pour iOS Simulator
+// Pour iOS Simulator (dev)
 const API_BASE_URL = 'http://localhost:8000/api';
-
-// Pour device physique (remplacer par votre IP)
-const API_BASE_URL = 'http://192.168.1.X:8000/api';
 ```
+
+## Securite
+
+- ProGuard active pour les builds release (minification du code)
+- Les fichiers `.env` ne sont pas versionnes (dans `.gitignore`)
+- Les tokens JWT sont stockes dans AsyncStorage
+- Authentification Google via Firebase
 
 ## Ecrans implementes
 
@@ -268,6 +275,12 @@ Verifier que l'API backend tourne sur `http://10.0.2.2:8000`
 cd ios && pod install && cd ..
 ```
 
+## Deploiement Production
+
+- **API:** https://koursa.duckdns.org/api
+- **Build release:** `npm run android` (ProGuard active)
+- **CI/CD:** Push sur `develop` (pas de deploy auto pour le mobile)
+
 ## Licence
 
-MIT License - Copyright (c) 2025 M1 INF 4027
+Apache License 2.0 - Copyright (c) 2025 M1 INF 4027
